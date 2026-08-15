@@ -21,7 +21,7 @@ ROOT = Path(__file__).parent
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--step", required=True,
-                        choices=["fetch", "normalize", "mart", "reconcile", "signals"])
+                        choices=["fetch", "normalize", "mart", "reconcile", "signals", "scenario"])
     parser.add_argument("--source", default=None,
                         choices=["fpi", "eurostat", "ocpi"])
     args = parser.parse_args()
@@ -43,6 +43,9 @@ def main():
     elif args.step == "signals":
         from scripts import signals
         signals.run()
+    elif args.step == "scenario":
+        from scripts import scenarios
+        scenarios.run()
     else:
         print(f"[ERRORE] step sconosciuto: {args.step}")
         sys.exit(1)

@@ -18,6 +18,7 @@ RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
 RECON_T12 = ROOT / "data" / "reconcile" / "reconcile_titoli12m_vs_isin.csv"
 RECON_FAB = ROOT / "data" / "reconcile" / "reconcile_fabbisogno_vs_stock.csv"
 PANORAMA = ROOT / "data" / "reporting" / "panorama.json"
+SCEN = ROOT / "data" / "scenarios" / "scenarios.json"
 
 
 def fail(msg):
@@ -89,6 +90,14 @@ def main():
     if recon_fab == 0:
         fail("reconcile fabbisogno vuoto")
     print(f"[OK] reconcile fabbisogno: {recon_fab} mesi confrontati")
+
+    if not SCEN.exists():
+        fail(f"scenari mancanti: {SCEN}")
+    with open(SCEN, encoding="utf-8") as f:
+        scen = json.load(f)
+    if not scen.get("scenari"):
+        fail("scenari vuoti")
+    print(f"[OK] scenari: {len(scen['scenari'])} ipotesi, orizzonte {scen.get('orizzonte_anni')} anni")
 
     print("[OK] smoke test superato")
 

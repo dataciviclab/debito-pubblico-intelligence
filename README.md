@@ -36,10 +36,11 @@ fetch -> normalize -> mart -> reconcile -> signals
 ```
 
 ```bash
-make all        # pipeline completa: fetch + normalize + mart + reconcile + signals + panorama + test
+make all        # pipeline completa: fetch + normalize + mart + reconcile + signals + scenario + panorama + test
 make fpi        # solo download Banca d'Italia FPI
 make mart       # rebuild mart (comando quotidiano)
 make reconcile  # fusion layer
+make scenario   # scenari di sostenibilità (traiettorie debito/PIL)
 make panorama   # deliverable: data/reporting/panorama.md + .json
 python3 test_smoke.py  # verifica integrità layer
 ```
@@ -53,7 +54,21 @@ python3 test_smoke.py  # verifica integrità layer
 | Mart | `data/mart/debt_fatti.parquet` | unica fonte per le query debito |
 | Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (5 casi) |
 | Signals | `data/signals/signals.csv` | segnali con soglie |
+| Scenarios | `data/scenarios/scenarios.json` | traiettorie debito/PIL per ipotesi |
 | Reporting | `data/reporting/panorama.md` + `.json` | deliverable pubblico |
+
+## Scenari di sostenibilità
+
+`data/scenarios/scenarios.json` proietta il debito/PIL per 5 anni usando
+l'identità di sostenibilità `d(t+1) = d(t)·(1+i)/(1+g) − sp`, a partire
+dall'ultimo valore reale OCPI. Combina ipotesi su costo del debito (i),
+crescita (g) e avanzo primario (sp) per capire **quali leve cambiano davvero
+la traiettoria** — non per prevedere il futuro.
+
+Esito riferimento (base 2025, 137,1%): stato attuale −1,2pp in 5 anni
+(quasi piatto); crescita debole +9,7pp; stress +17,8pp; avanzo primario al 3%
+−12,8pp. L'avanzo primario è la leva sotto controllo politico con effetto
+maggiore.
 
 ## Contratto dati
 
@@ -78,7 +93,8 @@ file ufficiale) e `data/build/mef_vita_media.parquet` (serie mensile vita media)
 
 ## Fusion layer (il cuore)
 
-**Stato:** tre casi attivi — FPI vs Eurostat, FPI vs OCPI, MEF vs FPI.
+**Stato:** cinque casi attivi — FPI vs Eurostat, FPI vs OCPI, MEF vs FPI,
+MEF titoli-12m vs rollover, fabbisogno vs stock.
 
 Riconciliazione implementata:
 1. **FPI (dicembre, mln EUR)** vs **Eurostat stock MIO_EUR (annuale)** — stesso

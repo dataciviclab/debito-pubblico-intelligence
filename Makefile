@@ -1,8 +1,8 @@
 # Debito Pubblico Intelligence — Makefile
-.PHONY: all fetch fpi eurostat ocpi mef normalize mart reconcile signals panorama test clean
+.PHONY: all fetch fpi eurostat ocpi mef normalize mart reconcile signals scenario panorama test clean
 
-# Pipeline completa: fonti -> normalize -> mart -> reconcile -> segnali -> panorama
-all: fetch normalize mart reconcile signals panorama test
+# Pipeline completa: fonti -> normalize -> mart -> reconcile -> segnali -> scenario -> panorama
+all: fetch normalize mart reconcile signals scenario panorama test
 
 # Step 1: scarica le fonti ufficiali (Banca d'Italia FPI, Eurostat, OCPI, MEF)
 fetch:
@@ -33,6 +33,10 @@ reconcile:
 # Step 5: segnali e alert con soglie
 signals:
 	python3 pipeline.py --step signals
+
+# Step 6: scenari di sostenibilità (traiettorie debito/PIL)
+scenario:
+	python3 pipeline.py --step scenario
 
 # Deliverable: panorama in data/reporting/ (md + json)
 panorama:

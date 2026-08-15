@@ -90,6 +90,21 @@ Stato: prima sessione — scaffold e primo fetch dati
   opere-pubbliche-intelligence.
 - Il panorama riflette i valori **post-fix dedup tranche** (rollover 363,5 mld = 12,7%).
 
+## Layer scenario (sostenibilità)
+
+- **`scripts/scenarios.py`** → `data/scenarios/scenarios.json`: proiezione debito/PIL
+  a 5 anni con identità di sostenibilità `d(t+1) = d(t)·(1+i)/(1+g) − sp`.
+  7 ipotesi (stato attuale, crescita forte/debole, tassi alti, avanzo primario
+  2%/3%, stress).
+- **Fix metodologico importante**: la formula corretta è `(1+i)/(1+g)`, NON
+  `(1+i−g)/(1+g)`. Con quella sbagliata lo stato attuale proiettava −17pp in 5
+  anni (incoerente col 2025 reale, salito +2,4pp per lo SFA). Con quella giusta:
+  stato attuale −1,2pp/5y — coerente con i-g appena positivo.
+- **Lettura**: l'avanzo primario è la leva sotto controllo politico con effetto
+  maggiore (3% → −12,8pp in 5 anni). La crescita debole (+9,7pp) e lo stress
+  (+17,8pp) mostrano la fragilità.
+- **Signals**: 12 segnali, **scenario**: 7 ipotesi, **panorama**: sezione 5.
+
 ## Quadro intelligence (aggiornato)
 
 - **Spread BTP-Bund**: +0,81 pp (lug-2026) — IT 3,88% vs DE 3,07%.
