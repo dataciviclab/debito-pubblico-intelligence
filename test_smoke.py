@@ -16,6 +16,7 @@ RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
 RECON_T12 = ROOT / "data" / "reconcile" / "reconcile_titoli12m_vs_isin.csv"
+RECON_FAB = ROOT / "data" / "reconcile" / "reconcile_fabbisogno_vs_stock.csv"
 PANORAMA = ROOT / "data" / "reporting" / "panorama.json"
 
 
@@ -81,6 +82,13 @@ def main():
     if not panorama.get("segnali") or not panorama.get("profilo"):
         fail("panorama senza segnali/profilo")
     print(f"[OK] panorama: {len(panorama['segnali'])} segnali, {len(panorama['profilo'])} anni profilo")
+
+    if not RECON_FAB.exists():
+        fail(f"reconcile fabbisogno mancante: {RECON_FAB}")
+    recon_fab = con.execute(f"SELECT count(*) FROM read_csv('{RECON_FAB}')").fetchone()[0]
+    if recon_fab == 0:
+        fail("reconcile fabbisogno vuoto")
+    print(f"[OK] reconcile fabbisogno: {recon_fab} mesi confrontati")
 
     print("[OK] smoke test superato")
 

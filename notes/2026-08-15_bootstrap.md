@@ -90,6 +90,19 @@ Stato: prima sessione — scaffold e primo fetch dati
   opere-pubbliche-intelligence.
 - Il panorama riflette i valori **post-fix dedup tranche** (rollover 363,5 mld = 12,7%).
 
+## Quadro intelligence (aggiornato)
+
+- **Spread BTP-Bund**: +0,81 pp (lug-2026) — IT 3,88% vs DE 3,07%.
+- **Detentori**: FPI TCCE0200 contiene SOLO la detenzione Banca d'Italia in EUR
+  (537 mld = 16,7% del debito AP). Gli altri detentori esistono solo come quote
+  percentuali (PT) nella fonte. La scomposizione completa per detentore richiede
+  una fonte ad hoc (pubblicazione detentori Banca d'Italia/OCPI).
+  Fix nel decoder: estrazione del livello detentore (parts[5]) per TCCE0200 +
+  filtro colonne FAV.EUR (esclusione quote PT).
+- **Caso reconcile 5**: fabbisogno AP (TCCE0125) vs variazione stock → SFA implicito
+  +19 mld su 36 mesi, 0 mesi anomali (>20 mld). Identità contabile rispettata.
+- **Signals**: 12 segnali in 5 categorie (debito, costo, sostenibilità, rischio, detentori).
+
 ## Quadro intelligence (primo quadro completo)
 
 Lo stock di debito è coerente cross-fonte (FPI=Eurostat=OCPI); i titoli Tesoro

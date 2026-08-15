@@ -25,7 +25,7 @@ investigare. È ciò che distingue intelligence da aggregazione.
 |---|---|---|---|
 | Banca d'Italia BDS — FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze | CSV/ZIP | ✅ integrato |
 | Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
-| Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile | SDMX JSON | ✅ integrato |
+| Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile (IT + DE) | SDMX JSON | ✅ integrato |
 | OCPI (Osservatorio Conti Pubblici) | 26 serie storiche 1861-2025 (debito, PIL, i-g, saldo primario) | XLSX | ✅ integrato |
 | MEF / Dipartimento del Tesoro | composizione, scadenze ISIN, titoli 12m, vita media (CSV mensili) | CSV | ✅ integrato |
 
@@ -51,7 +51,7 @@ python3 test_smoke.py  # verifica integrità layer
 | Raw | `data/raw/fpi_all.csv`, `eurostat_*.csv`, `ocpi_serie_storiche.csv`, `mef_*.csv` | fonti scaricate |
 | Build | `data/build/fpi_long.csv`, `data/build/mef_scadenze.parquet` | source-level normalizzato |
 | Mart | `data/mart/debt_fatti.parquet` | unica fonte per le query debito |
-| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (4 casi) |
+| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (5 casi) |
 | Signals | `data/signals/signals.csv` | segnali con soglie |
 | Reporting | `data/reporting/panorama.md` + `.json` | deliverable pubblico |
 
@@ -88,6 +88,7 @@ Riconciliazione implementata:
    Tesoro rispetto a tutti i titoli delle AP.
 4. **MEF "titoli 12m" ufficiale vs rollover ISIN-level** — due file della stessa
    fonte: verifica del parser + perimetro.
+5. **Fabbisogno AP vs variazione stock** — identità contabile con SFA implicito.
 
 Esiti:
 - FPI vs Eurostat: **31 anni (1995-2025), 1 anomalia** (1995, -7% — spiegata,
@@ -98,6 +99,8 @@ Esiti:
   delle AP. 244 ISIN in circolazione (detail file scadenze).
 - Titoli-12m ufficiale vs ISIN: **8/12 mesi identici, 4 divergono** (+53 mld —
   da investigare, probabile disallineamento di valutazione; vedi note).
+- Fabbisogno vs variazione stock: **SFA implicito +19 mld su 36 mesi** — identità
+  contabile rispettata, nessun mese anomalo (>20 mld).
 
 Ogni delta oltre soglia diventa una **anomalia da investigare**, non un errore.
 

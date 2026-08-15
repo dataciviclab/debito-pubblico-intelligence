@@ -25,6 +25,11 @@ l'anomalia reale sarebbe una rottura del rapporto nel tempo.
 Quarto caso: MEF "titoli in scadenza 12m" (file ufficiale per mese) vs rollover
 calcolato da noi dal file ISIN-level scadenze. Stessa fonte MEF, due file diversi:
 verifica del nostro parser + perimetro (8/12 mesi collimano, 4 divergono — da capire).
+
+Quinto caso: fabbisogno AP (TCCE0125) vs variazione dello stock di debito (S13.MGD).
+Identità contabile: variazione stock = fabbisogno + aggiustamento stock-flussi (SFA).
+Il delta è il SFA implicito — la parte di variazione del debito non spiegata dal
+fabbisogno (es. operazioni fuori bilancio, riallocazioni, effetti di cambio).
 """
 
 import csv
@@ -225,6 +230,72 @@ def run():
             for r in report:
                 w.writerow([r["mese"], r["ufficiale_mln_eur"], r["isin_mln_eur"],
                             r["delta_mln_eur"], r["delta_pct"], r["anomalia"]])
+        print(f"[reconcile] OK {out}")
+
+    # CASO 5: fabbisogno AP (TCCE0125) vs variazione stock (S13.MGD)
+    fatti = ROOT / "data" / "mart" / "debt_fatti.parquet"
+    if fatti.exists():
+        print("\n=== CASO 5: fabbisogno AP vs variazione stock (SFA implicito) ===")
+        import csv as _csv
+
+        # stock mensile (serie): per calcolare la variazione m/m
+        stock = con.execute("""
+            SELECT data, valore_mln_eur
+            FROM read_parquet('data/mart/debt_fatti.parquet')
+            WHERE tavola = 'debito_ap_sottosettori' AND codice = 'S13.MGD'
+            ORDER BY data
+        """).fetchall()
+        stock_map = {d: v for d, v in stock}
+
+        fab = con.execute("""
+            SELECT data, valore_mln_eur
+            FROM read_parquet('data/mart/debt_fatti.parquet')
+            WHERE tavola = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
+            ORDER BY data
+        """).fetchall()
+        fab_map = {d: v for d, v in fab}
+
+        # variazione stock = stock[t] - stock[t-1]; SFA = variazione - fabbisogno
+        import datetime
+
+        report = []
+        for d, f in fab_map.items():
+            first_this = datetime.date(d.year, d.month, 1)
+            prev_month_end = first_this - datetime.timedelta(days=1)
+            # cerchiamo l'ultima osservazione <= prev_month_end
+            prev_vals = [v for dd, v in stock_map.items() if dd <= prev_month_end]
+            prev_val = prev_vals[-1] if prev_vals else None
+            cur_val = stock_map.get(d)
+            if prev_val is None or cur_val is None:
+                continue
+            d_stock = cur_val - prev_val
+            sfa = d_stock - f
+            report.append({
+                "mese": d.isoformat()[:7],
+                "fabbisogno_mln_eur": round(f, 0),
+                "variazione_stock_mln_eur": round(d_stock, 0),
+                "sfa_implicito_mln_eur": round(sfa, 0),
+            })
+
+        report = report[-36:]  # ultimi 3 anni
+        tot_fab = sum(r["fabbisogno_mln_eur"] for r in report)
+        tot_var = sum(r["variazione_stock_mln_eur"] for r in report)
+        tot_sfa = sum(r["sfa_implicito_mln_eur"] for r in report)
+        print(f"[reconcile] ultimi {len(report)} mesi: fabbisogno cum {tot_fab:,.0f} vs "
+              f"variazione stock cum {tot_var:,.0f} mln (SFA cum {tot_sfa:+,.0f})")
+        big = [r for r in report if abs(r["sfa_implicito_mln_eur"]) > 20000]
+        print(f"[reconcile] mesi con |SFA| >20 mld: {len(big)}")
+        for r in big[-5:]:
+            print(f"[reconcile]   {r['mese']}: fab {r['fabbisogno_mln_eur']:,.0f} vs "
+                  f"Δstock {r['variazione_stock_mln_eur']:,.0f} (SFA {r['sfa_implicito_mln_eur']:+,.0f})")
+
+        out = RECON_DIR / "reconcile_fabbisogno_vs_stock.csv"
+        with open(out, "w", encoding="utf-8", newline="") as f:
+            w = _csv.writer(f)
+            w.writerow(["mese", "fabbisogno_mln_eur", "variazione_stock_mln_eur", "sfa_implicito_mln_eur"])
+            for r in report:
+                w.writerow([r["mese"], r["fabbisogno_mln_eur"], r["variazione_stock_mln_eur"],
+                            r["sfa_implicito_mln_eur"]])
         print(f"[reconcile] OK {out}")
 
 

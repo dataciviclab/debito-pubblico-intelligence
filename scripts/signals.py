@@ -74,6 +74,17 @@ SIGNAL_QUERIES = {
         "SELECT round(max(vita_media_mesi) / 12.0, 2) FROM read_parquet('data/build/mef_vita_media.parquet') "
         "WHERE tipologia = 'TOTALE'"
     ),
+    "spread_btp_bund_pp": (
+        "WITH it AS (SELECT rendimento_pct r FROM read_csv('data/raw/eurostat_irt_lt_mcby.csv') ORDER BY mese DESC LIMIT 1), "
+        "de AS (SELECT rendimento_pct r FROM read_csv('data/raw/eurostat_irt_lt_mcby_de.csv') ORDER BY mese DESC LIMIT 1) "
+        "SELECT round(it.r - de.r, 2) FROM it, de"
+    ),
+    "quota_banca_italia_pct": (
+        "SELECT round((SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
+        "WHERE tavola='debito_ap_detentori' AND codice='S13.MGD.S121' AND data=(SELECT max(data) FROM read_parquet('data/mart/debt_fatti.parquet') WHERE tavola='debito_ap_detentori' AND codice='S13.MGD.S121')) "
+        "/ (SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
+        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' AND data=(SELECT max(data) FROM read_parquet('data/mart/debt_fatti.parquet') WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD')) * 100, 1)"
+    ),
 }
 
 SIGNAL_META = {
@@ -87,6 +98,8 @@ SIGNAL_META = {
     "rollover_12m_pct": ("debito in scadenza prossimi 12m (% del residuo)", "rischio", ">15%: rollover elevato"),
     "rollover_12m_mld_eur": ("debito in scadenza prossimi 12m (mld EUR)", "rischio", None),
     "vita_media_anni": ("vita media residua dei titoli (anni)", "rischio", "<5: durata corta"),
+    "spread_btp_bund_pp": ("spread BTP-Bund 10Y (pp)", "costo", ">2: pressione di mercato"),
+    "quota_banca_italia_pct": ("debito AP detenuto da Banca d'Italia (% dello stock)", "detentori", None),
 }
 
 

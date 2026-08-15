@@ -72,11 +72,14 @@ def _read_legend(zip_bytes):
                         parts = codice.split(".")
                         if len(parts) >= 8:
                             legend[f"{parts[3]}.{parts[4]}"] = desc
+                        if len(parts) >= 6:
+                            # chiave detentori: settore.strumento.detentore
+                            legend[f"{parts[3]}.{parts[4]}.{parts[5]}"] = desc
                         legend[codice] = desc
     return legend
 
 
-def _decode_code(column):
+def _decode_code(column, table_code=None):
     if not column.startswith("FPI_FP."):
         return ""
     parts = column.split(".")
@@ -85,6 +88,9 @@ def _decode_code(column):
     geo = parts[2]
     if geo != "IT":
         return f"{geo}.{parts[4]}"
+    if table_code == "TCCE0200" and len(parts) >= 6 and parts[5]:
+        # tavola detentori: key = settore.strumento.detentore (es. S13.MGD.S121)
+        return f"{parts[3]}.{parts[4]}.{parts[5]}"
     return f"{parts[3]}.{parts[4]}"
 
 
@@ -101,11 +107,13 @@ def _wide_to_long(csv_bytes, table_code, legend, filter_year=None):
         for colname, value in row.items():
             if colname == "DATA_OSS" or not value:
                 continue
+            if table_code == "TCCE0200" and ".FAV.EUR." not in colname:
+                continue  # detentori: solo valori in EUR, escludi quote PT
             try:
                 valore = float(value.replace(",", "."))
             except (ValueError, AttributeError):
                 continue
-            codice = _decode_code(colname)
+            codice = _decode_code(colname, table_code)
             if not codice:
                 continue
             rows.append({
@@ -248,6 +256,22 @@ def fetch_eurostat():
             r.pop(k, None)
 
     out = RAW_DIR / "eurostat_irt_lt_mcby.csv"
+    with open(out, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["mese", "rendimento_pct"])
+        w.writeheader()
+        w.writerows(rows)
+    print(f"[eurostat] OK {out}: {len(rows)} righe")
+
+    print("[eurostat] rendimento 10Y Germania mensile (irt_lt_mcby_m, DE) per spread ...")
+    payload = _eurostat_get("irt_lt_mcby_m", {"geo": "DE"})
+    rows = _eurostat_series(payload)
+    for r in rows:
+        r["mese"] = r.pop("time")
+        r["rendimento_pct"] = r.pop("valore")
+        for k in ("freq", "int_rt", "geo"):
+            r.pop(k, None)
+
+    out = RAW_DIR / "eurostat_irt_lt_mcby_de.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["mese", "rendimento_pct"])
         w.writeheader()

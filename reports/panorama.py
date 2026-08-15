@@ -80,6 +80,8 @@ def _render_markdown(payload):
     lines.append(f"- **Rollover 12m**: {s.get('rollover_12m_mld_eur', 0):,.0f} mld EUR "
                  f"({s.get('rollover_12m_pct', 0):.1f}% del residuo)")
     lines.append(f"- **Vita media residua**: {s.get('vita_media_anni', 0):.1f} anni")
+    lines.append(f"- **Spread BTP-Bund**: {s.get('spread_btp_bund_pp', 0):.2f} pp")
+    lines.append(f"- **Banca d'Italia detiene**: {s.get('quota_banca_italia_pct', 0):.1f}% del debito AP")
     lines.append("")
     lines.append("## 2. Riconciliazione cross-fonte")
     lines.append("")
@@ -126,6 +128,8 @@ def main():
          "esito": "101,1% — Tesoro emette quasi tutti i titoli AP"},
         {"nome": "MEF titoli-12m vs rollover ISIN",
          "esito": "8/12 mesi identici; delta residuo <1%"},
+        {"nome": "Fabbisogno vs variazione stock",
+         "esito": "SFA implicito +19 mld su 36 mesi (identità contabile ok)"},
     ]
 
     payload = {
