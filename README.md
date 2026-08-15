@@ -25,9 +25,9 @@ investigare. È ciò che distingue intelligence da aggregazione.
 |---|---|---|---|
 | Banca d'Italia BDS — FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze | CSV/ZIP | ✅ integrato |
 | Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
-| Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y) | SDMX | 🔜 |
+| Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile | SDMX JSON | ✅ integrato |
+| OCPI (Osservatorio Conti Pubblici) | 26 serie storiche 1861-2025 (debito, PIL, i-g, saldo primario) | XLSX | ✅ integrato |
 | MEF / Dipartimento del Tesoro | titoli di Stato, ISIN, aste, scadenze | XLSX/CSV | 🔜 |
-| OCPI (Osservatorio Conti Pubblici) | serie storiche lunghe 1861-2025 (i-g, saldo primario) | XLSX | 🔜 |
 
 ## Pipeline
 
@@ -65,19 +65,18 @@ Codici chiave Banca d'Italia FPI:
 
 ## Fusion layer (il cuore)
 
-**Stato:** primo caso attivo — riconciliazione FPI vs Eurostat (stock).
+**Stato:** due casi attivi — FPI vs Eurostat e FPI vs OCPI.
 
 Riconciliazione implementata:
 1. **FPI (dicembre, mln EUR)** vs **Eurostat stock MIO_EUR (annuale)** — stesso
    concetto (debito lordo AP, S13). Delta % con soglia 2%.
+2. **FPI vs OCPI** (serie C "Debito") — stessa definizione Maastricht.
 
-Esito primo run: **31 anni confrontati (1995-2025), 1 sola anomalia** (1995, -7%).
-Gli anni recenti mostrano delta 0.0: le fonti usano la stessa definizione Maastricht.
-L'anomalia 1995 è da investigare (probabile revisione storica).
-
-Riconciliazione prevista:
-2. **FPI** vs **OCPI (annuale, 1861-2025)** — serie lunga e i-g
-3. **MEF Tesoro (emissioni)** vs **FPI (stock)** — flussi che spiegano lo stock
+Esiti primo run:
+- FPI vs Eurostat: **31 anni (1995-2025), 1 anomalia** (1995, -7% — spiegata,
+  divergenza di definizione transitoria all'avvio delle notifiche EDP).
+- FPI vs OCPI: **165 anni (1861-2025), 0 anomalie** — due fonti indipendenti
+  (Banca d'Italia vs OCPI che combina ISTAT/FMI/AMECO) allineate al decimale.
 
 Ogni delta oltre soglia diventa una **anomalia da investigare**, non un errore.
 

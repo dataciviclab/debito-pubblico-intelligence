@@ -51,9 +51,23 @@ Stato: prima sessione — scaffold e primo fetch dati
 ## Fusion layer (aggiornamento)
 
 - **fetch Eurostat integrato** (SDMX JSON, decoder generalizzato multi-dimensione):
-  `eurostat_gov10dd.csv` (debito/PIL per settore) e `eurostat_gov10dd_stock.csv` (stock MIO_EUR).
-- **reconcile.py attivo**: FPI dicembre vs Eurostat stock annuale (S13).
-  Esito: 31 anni confrontati (1995-2025), **1 anomalia** (1995, -7%).
-  Anni recenti delta 0.0 — le fonti usano la stessa definizione Maastricht.
-- **Fix nel percorso**: decoder Eurostat generalizzato (dimensione `unit` nel payload);
-  ordinamento esplicito in reconcile (senza ORDER BY il report era disordinato).
+  `eurostat_gov10dd.csv` (debito/PIL per settore), `eurostat_gov10dd_stock.csv`
+  (stock MIO_EUR), `eurostat_irt_lt_mcby.csv` (rendimento 10Y mensile 1980-2026).
+- **fetch OCPI integrato**: `ocpi_serie_storiche.csv` (26 serie, 1861-2025, 4.439 celle).
+  Scoperta: serie C "Debito" allineata a FPI al decimale; serie S (i-g) disponibile.
+- **reconcile.py con 2 casi attivi**:
+  - FPI vs Eurostat (31 anni, 1995-2025): 1 anomalia (1995, -7% — spiegata, vedi `2026-08-15_anomalia_1995.md`).
+  - FPI vs OCPI (165 anni, 1861-2025): **0 anomalie**, delta 2025 = -0,01%.
+- **signals.py esteso**: rendimento 10Y (3,88% lug-2026), costo interesse implicito
+  (~124 mld EUR/anno da 10Y x stock).
+- **Fix nel percorso**: decoder Eurostat generalizzato (dimensione `unit`);
+  ordinamento esplicito in reconcile; fetch OCPI con cache xlsx + estrazione CSV.
+
+## Lezione chiave (fusion layer)
+
+Il primo valore tangibile: **FPI e OCPI convergono per 165 anni** — due catene di
+produzione dati indipendenti (Banca d'Italia vs OCPI che combina ISTAT/FMI/AMECO)
+raccontano la stessa storia al decimale. Il fusion layer quindi *conferma* la
+coerenza dello stock di debito. L'anomalia 1995 (solo vs Eurostat) è l'esempio
+perfetto di come il sistema distingua "anomalia da definizione" (spiegabile) da
+"anomalia da errore".

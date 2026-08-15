@@ -237,9 +237,98 @@ def fetch_eurostat():
         w.writerows(rows)
     print(f"[eurostat] OK {out}: {len(rows)} righe")
 
+    print("[eurostat] rendimento 10Y mensile (irt_lt_mcby_m) ...")
+    payload = _eurostat_get("irt_lt_mcby_m", {"geo": "IT"})
+    rows = _eurostat_series(payload)
+    for r in rows:
+        r["mese"] = r.pop("time")
+        r["rendimento_pct"] = r.pop("valore")
+        for k in ("freq", "int_rt", "geo"):
+            r.pop(k, None)
+
+    out = RAW_DIR / "eurostat_irt_lt_mcby.csv"
+    with open(out, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["mese", "rendimento_pct"])
+        w.writeheader()
+        w.writerows(rows)
+    print(f"[eurostat] OK {out}: {len(rows)} righe")
+
 
 def fetch_ocpi():
-    print("[ocpi] ... da implementare (serie storiche finanza pubblica)")
+    """Serie storiche OCPI (Università Cattolica) — Excel con 26 serie, 1861-2025.
+
+    Scarica la pagina serie storiche, trova il link .xlsx, estrae le serie "dato"
+    in formato long. Fonte terza: non scarica se il file è già presente.
+    """
+    import re
+
+    import openpyxl
+
+    out = RAW_DIR / "ocpi_serie_storiche.xlsx"
+    if not out.exists():
+        page = "https://osservatoriocpi.unicatt.it/ocpi-servizi-serie-storiche"
+        print(f"[ocpi] cerco link su {page} ...")
+        req = Request(page, headers={"User-Agent": "Mozilla/5.0"})
+        with urlopen(req, timeout=30) as resp:
+            html = resp.read().decode("utf-8", "ignore")
+        links = re.findall(r'href=["\']([^"\']*\.(?:xlsx|xls))["\']', html, re.I)
+        if not links:
+            print("[ERRORE] ocpi: nessun link .xlsx trovato")
+            sys.exit(1)
+        # preferisce il link assoluto; risolve relativi
+        href = links[0]
+        if href.startswith("//"):
+            url = "https:" + href
+        elif href.startswith("/"):
+            url = "https://osservatoriocpi.unicatt.it" + href
+        elif href.startswith("http"):
+            url = href
+        else:
+            url = "https://osservatoriocpi.unicatt.it/" + href
+        print(f"[ocpi] download {url} ...")
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        with urlopen(req, timeout=120) as resp:
+            out.write_bytes(resp.read())
+        print(f"[ocpi] scaricato {out} ({out.stat().st_size} bytes)")
+    else:
+        print(f"[ocpi] xlsx già presente: {out}")
+
+    wb = openpyxl.load_workbook(out, read_only=True, data_only=True)
+    ws = wb["serie storiche"]
+    rows = list(ws.iter_rows(values_only=True))
+    header = rows[1]
+    years = [h for h in header[5:] if h is not None]
+
+    series_rows = []
+    for r in rows[2:]:
+        sid = r[1]
+        name = r[2]
+        unit = r[3]
+        if sid is None or name is None:
+            continue
+        for i, y in enumerate(years):
+            val = r[5 + i] if (5 + i) < len(r) else None
+            if val is None:
+                continue
+            try:
+                val = float(val)
+            except (TypeError, ValueError):
+                continue
+            series_rows.append({
+                "serie": sid,
+                "nome": name,
+                "unita": unit,
+                "anno": int(y),
+                "valore": val,
+            })
+
+    csv_out = RAW_DIR / "ocpi_serie_storiche.csv"
+    with open(csv_out, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["serie", "nome", "unita", "anno", "valore"])
+        w.writeheader()
+        w.writerows(series_rows)
+    print(f"[ocpi] OK {csv_out}: {len(series_rows)} celle")
 
 
 def run(source=None):

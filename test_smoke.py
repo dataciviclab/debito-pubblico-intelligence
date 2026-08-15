@@ -12,6 +12,7 @@ import duckdb
 ROOT = Path(__file__).resolve().parent
 MART = ROOT / "data" / "mart" / "debt_fatti.parquet"
 RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
+RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 
 
 def fail(msg):
@@ -38,7 +39,14 @@ def main():
     recon_rows = con.execute(f"SELECT count(*) FROM read_csv('{RECON}')").fetchone()[0]
     if recon_rows == 0:
         fail("reconcile vuoto")
-    print(f"[OK] reconcile: {recon_rows} anni confrontati")
+    print(f"[OK] reconcile eurostat: {recon_rows} anni confrontati")
+
+    if not RECON_OCPI.exists():
+        fail(f"reconcile ocpi mancante: {RECON_OCPI}")
+    recon_ocpi = con.execute(f"SELECT count(*) FROM read_csv('{RECON_OCPI}')").fetchone()[0]
+    if recon_ocpi == 0:
+        fail("reconcile ocpi vuoto")
+    print(f"[OK] reconcile ocpi: {recon_ocpi} anni confrontati")
 
     print("[OK] smoke test superato")
 

@@ -13,8 +13,12 @@ Primo caso (bootstrap):
 Allineamento: FPI mese di dicembre di ciascun anno vs Eurostat anno.
 Delta % = (eurostat - fpi_dic) / fpi_dic * 100.
 Soglia anomalia: |delta| > 2%.
+
+Secondo caso: FPI vs OCPI (serie C "Debito", milioni EUR correnti).
+Le definizioni coincidono (stesso stock Maastricht); il delta conferma la coerenza.
 """
 
+import csv
 import sys
 from pathlib import Path
 
@@ -40,54 +44,68 @@ def _read_fpi_december(con):
     """).fetchall()
 
 
+def _compare(con, name, fpi_dic, other_rows, out_path):
+    other_map = {anno: val for anno, val in other_rows}
+    report = []
+    for anno, fpi_val in fpi_dic:
+        other_val = other_map.get(anno)
+        if other_val is None:
+            continue
+        delta_pct = (other_val - fpi_val) / fpi_val * 100
+        report.append({
+            "anno": anno,
+            "fpi_dic_mln_eur": round(fpi_val, 1),
+            f"{name}_mln_eur": round(other_val, 1),
+            "delta_pct": round(delta_pct, 2),
+            "anomalia": "SI" if abs(delta_pct) > ANOMALY_THRESHOLD_PCT else "no",
+        })
+
+    with open(out_path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["anno", "fpi_dic_mln_eur", f"{name}_mln_eur", "delta_pct", "anomalia"])
+        w.writeheader()
+        w.writerows(report)
+
+    anomalies = [r for r in report if r["anomalia"] == "SI"]
+    print(f"[reconcile] FPI vs {name}: {len(report)} anni confrontati, {len(anomalies)} anomalie (soglia {ANOMALY_THRESHOLD_PCT}%)")
+    print(f"[reconcile] OK {out_path}")
+    for a in anomalies[-5:]:
+        print(f"[reconcile]   anomalia {a['anno']}: delta {a['delta_pct']:+.2f}% "
+              f"(FPI {a['fpi_dic_mln_eur']:,.0f} vs {name} {a[f'{name}_mln_eur']:,.0f})")
+    if report:
+        last = report[-1]
+        print(f"[reconcile] ultimo anno ({last['anno']}): delta {last['delta_pct']:+.2f}%")
+    return report
+
+
 def run():
     fatti = ROOT / "data" / "mart" / "debt_fatti.parquet"
     euro = RAW_DIR / "eurostat_gov10dd_stock.csv"
+    ocpi = RAW_DIR / "ocpi_serie_storiche.csv"
     if not fatti.exists() or not euro.exists():
         print("[ERRORE] servono mart FPI e fetch eurostat")
         sys.exit(1)
 
     RECON_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
-    con.execute(f"CREATE TABLE fpi AS SELECT * FROM read_parquet('{fatti}')")
-    con.execute(f"CREATE TABLE eurostat AS SELECT * FROM read_csv('{euro}')")
 
     fpi_dic = _read_fpi_december(con)
+
+    print("=== CASO 1: FPI vs Eurostat (gov_10dd_edpt1) ===")
     eur_rows = con.execute("""
-        SELECT anno, stock_mln_eur FROM eurostat WHERE settore = 'S13' ORDER BY anno
+        SELECT anno, stock_mln_eur FROM read_csv('data/raw/eurostat_gov10dd_stock.csv')
+        WHERE settore = 'S13' ORDER BY anno
     """).fetchall()
+    _compare(con, "eurostat", fpi_dic, eur_rows, RECON_DIR / "reconcile_fpi_vs_eurostat.csv")
 
-    eur_map = {anno: val for anno, val in eur_rows}
-    report = []
-    for anno, fpi_val in fpi_dic:
-        eur_val = eur_map.get(anno)
-        if eur_val is None:
-            continue
-        delta_pct = (eur_val - fpi_val) / fpi_val * 100
-        report.append({
-            "anno": anno,
-            "fpi_dic_mln_eur": round(fpi_val, 1),
-            "eurostat_mln_eur": round(eur_val, 1),
-            "delta_pct": round(delta_pct, 2),
-            "anomalia": "SI" if abs(delta_pct) > ANOMALY_THRESHOLD_PCT else "no",
-        })
-
-    out = RECON_DIR / "reconcile_fpi_vs_eurostat.csv"
-    import csv
-    with open(out, "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["anno", "fpi_dic_mln_eur", "eurostat_mln_eur", "delta_pct", "anomalia"])
-        w.writeheader()
-        w.writerows(report)
-
-    anomalies = [r for r in report if r["anomalia"] == "SI"]
-    print(f"[reconcile] FPI vs Eurostat: {len(report)} anni confrontati, {len(anomalies)} anomalie (soglia {ANOMALY_THRESHOLD_PCT}%)")
-    print(f"[reconcile] OK {out}")
-    for a in anomalies[-5:]:
-        print(f"[reconcile]   anomalia {a['anno']}: delta {a['delta_pct']:+.2f}% "
-              f"(FPI {a['fpi_dic_mln_eur']:,.0f} vs EUR {a['eurostat_mln_eur']:,.0f})")
-    if report:
-        last = report[-1]
-        print(f"[reconcile] ultimo anno ({last['anno']}): delta {last['delta_pct']:+.2f}%")
+    if ocpi.exists():
+        print("\n=== CASO 2: FPI vs OCPI (serie C 'Debito') ===")
+        ocpi_rows = con.execute("""
+            SELECT anno, valore FROM read_csv('data/raw/ocpi_serie_storiche.csv')
+            WHERE serie = 'C' ORDER BY anno
+        """).fetchall()
+        _compare(con, "ocpi", fpi_dic, ocpi_rows, RECON_DIR / "reconcile_fpi_vs_ocpi.csv")
+    else:
+        print("\n[reconcile] ocpi non disponibile (skip caso 2)")
 
 
 if __name__ == "__main__":
