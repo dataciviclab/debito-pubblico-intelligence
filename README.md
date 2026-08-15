@@ -48,8 +48,8 @@ python3 test_smoke.py  # verifica integrità layer
 | Layer | File | Contenuto |
 |---|---|---|
 | Raw | `data/raw/fpi_all.csv`, `eurostat_*.csv`, `ocpi_serie_storiche.csv`, `mef_*.csv` | fonti scaricate |
-| Build | `data/build/fpi_long.csv` | source-level normalizzato (provenienza aggiunta) |
-| Mart | `data/mart/debt_fatti.parquet` | unica fonte per tutte le query |
+| Build | `data/build/fpi_long.csv`, `data/build/mef_scadenze.parquet` | source-level normalizzato |
+| Mart | `data/mart/debt_fatti.parquet` | unica fonte per le query debito |
 | Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (3 casi) |
 | Signals | `data/signals/signals.csv` | segnali con soglie |
 
@@ -62,6 +62,14 @@ Codici chiave Banca d'Italia FPI:
 - `S13.MGD` — debito lordo Amministrazioni Pubbliche (tavola TCCE0225)
 - `S1311`/`S1313`/`S1314` — sottosettori (centrale, locale, enti previdenza)
 - `F3` / `F4` — strumenti: titoli / prestiti
+
+### Profilo scadenze (ISIN-level, MEF Tesoro)
+
+`data/build/mef_scadenze.parquet`: 1 riga per titolo/tranche con `isin`, `tipo`,
+`emissione`, `scadenza`, `cedola_pct`, `valuta`, `circolante_riv_eur`,
+`circolante_nom_eur`, `data_ref`. Include titoli esteri (GLOBAL/EMTN), SURE e
+NGEU. Query: `queries/04_profilo_scadenze.sql` (per anno) e
+`queries/05_rollover_12m.sql` (quota in scadenza a 12 mesi).
 
 ## Fusion layer (il cuore)
 

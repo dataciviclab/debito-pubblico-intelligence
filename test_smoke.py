@@ -11,6 +11,7 @@ import duckdb
 
 ROOT = Path(__file__).resolve().parent
 MART = ROOT / "data" / "mart" / "debt_fatti.parquet"
+MEF_SCAD = ROOT / "data" / "build" / "mef_scadenze.parquet"
 RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
@@ -55,6 +56,13 @@ def main():
     if recon_mef == 0:
         fail("reconcile mef vuoto")
     print(f"[OK] reconcile mef: {recon_mef} record")
+
+    if not MEF_SCAD.exists():
+        fail(f"scadenze mef mancanti: {MEF_SCAD}")
+    n_isin = con.execute(f"SELECT count(DISTINCT isin) FROM read_parquet('{MEF_SCAD}')").fetchone()[0]
+    if n_isin == 0:
+        fail("scadenze mef vuote")
+    print(f"[OK] scadenze mef: {n_isin} ISIN distinti")
 
     print("[OK] smoke test superato")
 

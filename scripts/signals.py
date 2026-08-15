@@ -59,6 +59,17 @@ SIGNAL_QUERIES = {
         "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
         "WHERE serie='I' ORDER BY anno DESC LIMIT 1"
     ),
+    "rollover_12m_pct": (
+        "WITH t AS (SELECT sum(circolante_nom_eur) tot FROM read_parquet('data/build/mef_scadenze.parquet') "
+        "WHERE scadenza >= data_ref), "
+        "r AS (SELECT sum(circolante_nom_eur) r12 FROM read_parquet('data/build/mef_scadenze.parquet') "
+        "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)) "
+        "SELECT round(r12 / tot * 100, 1) FROM t, r"
+    ),
+    "rollover_12m_mld_eur": (
+        "SELECT round(sum(circolante_nom_eur) / 1e9, 1) FROM read_parquet('data/build/mef_scadenze.parquet') "
+        "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)"
+    ),
 }
 
 SIGNAL_META = {
@@ -69,6 +80,8 @@ SIGNAL_META = {
     "i_g_pp": ("i-g (pp)", "sostenibilita", ">0: debito cresce da solo"),
     "saldo_primario_pil_pct": ("saldo primario (% PIL)", "sostenibilita", "<0: nuovo debito per gestione"),
     "spesa_interessi_pil_pct": ("spesa interessi (% PIL)", "sostenibilita", None),
+    "rollover_12m_pct": ("debito in scadenza prossimi 12m (% del residuo)", "rischio", ">15%: rollover elevato"),
+    "rollover_12m_mld_eur": ("debito in scadenza prossimi 12m (mld EUR)", "rischio", None),
 }
 
 

@@ -66,13 +66,24 @@ Stato: prima sessione — scaffold e primo fetch dati
   (debito, costo, sostenibilità). Include debito/PIL (137,1%), i-g (+0,35pp),
   saldo primario (+0,7%), spesa interessi (3,8%), rendimento 10Y (3,88%).
 
+## Profilo scadenze / rollover (aggiornamento)
+
+- **normalize_mef**: `data/build/mef_scadenze.parquet` (515 titoli/tranche, 267 ISIN).
+  Include BTP/BOT/CCT + titoli esteri (GLOBAL, EMTN), SURE e NGEU. Date parse,
+  cedola estratta, `data_ref` dal header.
+- **Query**: `04_profilo_scadenze.sql` (per anno), `05_rollover_12m.sql`.
+- **Profilo**: picchi 2027 (444 mld), 2028 (370), 2031 (339), 2033 (233);
+  coda lunga fino al 2072.
+- **Rollover 12m**: **419 mld EUR = 10,7%** del residuo (sotto soglia 15%).
+- **Signals**: 9 segnali con categorie (debito, costo, sostenibilità, rischio).
+
 ## Quadro intelligence (primo quadro completo)
 
 Lo stock di debito è coerente cross-fonte (FPI=Eurostat=OCPI); i titoli Tesoro
 coprono il 101% dei titoli AP. I segnali di sostenibilità raccontano una situazione
 di attenzione ma non allarmante: debito/PIL alto (137%), i-g appena positivo
 (il debito cresce da solo ma di poco), saldo primario positivo (+0,7%), costo
-implicito ~124 mld/anno.
+implicito ~124 mld/anno, rollover 12m 10,7%.
 
 ## Lezione chiave (fusion layer)
 

@@ -19,7 +19,6 @@ ocpi:
 # Step 2: normalizza source-level -> long/tidy
 normalize:
 	python3 pipeline.py --step normalize
-
 # Step 3: mart queryabile (debito per sottosettore/strumento/detentore)
 mart:
 	python3 pipeline.py --step mart

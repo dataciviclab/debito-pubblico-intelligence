@@ -32,6 +32,8 @@ def main():
     elif args.step == "normalize":
         from scripts import normalize
         normalize.run()
+        from scripts import normalize_mef
+        normalize_mef.run()
     elif args.step == "mart":
         from scripts import mart
         mart.run()
