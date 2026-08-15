@@ -70,6 +70,10 @@ SIGNAL_QUERIES = {
         "SELECT round(sum(circolante_nom_eur) / 1e9, 1) FROM read_parquet('data/build/mef_scadenze.parquet') "
         "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)"
     ),
+    "vita_media_anni": (
+        "SELECT round(max(vita_media_mesi) / 12.0, 2) FROM read_parquet('data/build/mef_vita_media.parquet') "
+        "WHERE tipologia = 'TOTALE'"
+    ),
 }
 
 SIGNAL_META = {
@@ -82,6 +86,7 @@ SIGNAL_META = {
     "spesa_interessi_pil_pct": ("spesa interessi (% PIL)", "sostenibilita", None),
     "rollover_12m_pct": ("debito in scadenza prossimi 12m (% del residuo)", "rischio", ">15%: rollover elevato"),
     "rollover_12m_mld_eur": ("debito in scadenza prossimi 12m (mld EUR)", "rischio", None),
+    "vita_media_anni": ("vita media residua dei titoli (anni)", "rischio", "<5: durata corta"),
 }
 
 

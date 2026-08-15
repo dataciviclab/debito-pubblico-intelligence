@@ -27,7 +27,7 @@ investigare. È ciò che distingue intelligence da aggregazione.
 | Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
 | Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile | SDMX JSON | ✅ integrato |
 | OCPI (Osservatorio Conti Pubblici) | 26 serie storiche 1861-2025 (debito, PIL, i-g, saldo primario) | XLSX | ✅ integrato |
-| MEF / Dipartimento del Tesoro | composizione titoli in circolazione + scadenze ISIN-level (CSV mensili) | CSV | ✅ integrato |
+| MEF / Dipartimento del Tesoro | composizione, scadenze ISIN, titoli 12m, vita media (CSV mensili) | CSV | ✅ integrato |
 
 ## Pipeline
 
@@ -71,6 +71,9 @@ Codici chiave Banca d'Italia FPI:
 NGEU. Query: `queries/04_profilo_scadenze.sql` (per anno) e
 `queries/05_rollover_12m.sql` (quota in scadenza a 12 mesi).
 
+Layer MEF aggiuntivi: `data/build/mef_titoli_12m.parquet` (per mese x tipologia,
+file ufficiale) e `data/build/mef_vita_media.parquet` (serie mensile vita media).
+
 ## Fusion layer (il cuore)
 
 **Stato:** tre casi attivi — FPI vs Eurostat, FPI vs OCPI, MEF vs FPI.
@@ -81,6 +84,8 @@ Riconciliazione implementata:
 2. **FPI vs OCPI** (serie C "Debito") — stessa definizione Maastricht.
 3. **MEF Tesoro titoli vs FPI titoli AP (F3)** — i titoli di Stato emessi dal
    Tesoro rispetto a tutti i titoli delle AP.
+4. **MEF "titoli 12m" ufficiale vs rollover ISIN-level** — due file della stessa
+   fonte: verifica del parser + perimetro.
 
 Esiti:
 - FPI vs Eurostat: **31 anni (1995-2025), 1 anomalia** (1995, -7% — spiegata,
@@ -89,6 +94,8 @@ Esiti:
   (Banca d'Italia vs OCPI che combina ISTAT/FMI/AMECO) allineate al decimale.
 - MEF vs FPI: **101,1%** (giu-2026) — il Tesoro emette praticamente tutti i titoli
   delle AP. 244 ISIN in circolazione (detail file scadenze).
+- Titoli-12m ufficiale vs ISIN: **8/12 mesi identici, 4 divergono** (+53 mld —
+  da investigare, probabile disallineamento di valutazione; vedi note).
 
 Ogni delta oltre soglia diventa una **anomalia da investigare**, non un errore.
 

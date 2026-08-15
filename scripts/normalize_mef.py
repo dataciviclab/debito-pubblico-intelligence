@@ -152,6 +152,128 @@ def run():
     con.execute(f"COPY scadenze TO '{out}' (FORMAT parquet)")
     print(f"[normalize] mef scadenze OK {out}: {len(records)} titoli (data_ref {data_ref})")
 
+    normalize_titoli_12m()
+    normalize_vita_media()
+
+
+def _parse_mef_csv(path):
+    raw = path.read_bytes()
+    for enc in ("utf-8", "latin-1"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", "ignore")
+
+
+def normalize_titoli_12m():
+    """Titoli in scadenza nei prossimi 12 mesi: per mese x tipologia (mln EUR)."""
+    src = RAW_DIR / "mef_titoli_12m.csv"
+    if not src.exists():
+        return
+    text = _parse_mef_csv(src)
+    rows = list(csv.reader(io.StringIO(text), delimiter=";"))
+    header_idx = None
+    for i, r in enumerate(rows):
+        if r and (r[0] or "").strip() == "MESI":
+            header_idx = i
+            break
+    if header_idx is None:
+        print("[normalize] mef_titoli_12m: intestazione non trovata")
+        return
+    header = [h.strip() for h in rows[header_idx]]
+
+    MONTHS = {"gen": 1, "feb": 2, "mar": 3, "apr": 4, "mag": 5, "giu": 6,
+              "lug": 7, "ago": 8, "set": 9, "ott": 10, "nov": 11, "dic": 12}
+    records = []
+    for r in rows[header_idx + 1:]:
+        if not r or not (r[0] or "").strip():
+            continue
+        mese = r[0].strip()  # es. 'ago-26'
+        parts = mese.split("-")
+        if len(parts) != 2 or parts[0].lower() not in MONTHS:
+            continue
+        year = 2000 + int(parts[1])
+        month = MONTHS[parts[0].lower()]
+        for i in range(1, len(header)):
+            col = header[i]
+            if col == "TOTALE":
+                continue
+            val = _parse_amount(r[i]) if i < len(r) else None
+            if val is None:
+                continue
+            records.append({
+                "mese_scadenza": f"{year:04d}-{month:02d}",
+                "tipologia": col,
+                "valore_mln_eur": val,
+            })
+        tot = _parse_amount(r[header.index("TOTALE")]) if "TOTALE" in header else None
+        if tot is not None:
+            records.append({"mese_scadenza": f"{year:04d}-{month:02d}",
+                            "tipologia": "TOTALE", "valore_mln_eur": tot})
+
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    con = duckdb.connect()
+    con.execute("CREATE TABLE t12 (mese_scadenza VARCHAR, tipologia VARCHAR, valore_mln_eur DOUBLE)")
+    con.executemany("INSERT INTO t12 VALUES (?,?,?)",
+                    [(r["mese_scadenza"], r["tipologia"], r["valore_mln_eur"]) for r in records])
+    out = BUILD_DIR / "mef_titoli_12m.parquet"
+    con.execute(f"COPY t12 TO '{out}' (FORMAT parquet)")
+    print(f"[normalize] mef titoli_12m OK {out}: {len(records)} celle")
+
+
+def normalize_vita_media():
+    """Vita media ponderata: serie mensile per tipologia (mesi)."""
+    src = RAW_DIR / "mef_vita_media.csv"
+    if not src.exists():
+        return
+    text = _parse_mef_csv(src)
+    rows = list(csv.reader(io.StringIO(text), delimiter=";"))
+    header_idx = None
+    for i, r in enumerate(rows):
+        if r and len(r) > 1 and (r[1] or "").strip() == "BOT":
+            header_idx = i
+            break
+    if header_idx is None:
+        print("[normalize] mef_vita_media: intestazione non trovata")
+        return
+    header = [(h or "").strip() for h in rows[header_idx]]
+
+    MONTHS = {"gen": 1, "feb": 2, "mar": 3, "apr": 4, "mag": 5, "giu": 6,
+              "lug": 7, "ago": 8, "set": 9, "ott": 10, "nov": 11, "dic": 12}
+    records = []
+    for r in rows[header_idx + 1:]:
+        if not r or not (r[0] or "").strip():
+            continue
+        mese = r[0].strip()
+        parts = mese.split("-")
+        if len(parts) != 2 or parts[0].lower() not in MONTHS:
+            continue
+        year = 2000 + int(parts[1])
+        month = MONTHS[parts[0].lower()]
+        for i, col in enumerate(header):
+            if not col or col == "" or i == 0:
+                continue
+            if i >= len(r):
+                continue
+            val = _parse_amount(r[i])
+            if val is None:
+                continue
+            records.append({
+                "mese": f"{year:04d}-{month:02d}",
+                "tipologia": col,
+                "vita_media_mesi": val,
+            })
+
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    con = duckdb.connect()
+    con.execute("CREATE TABLE vmedia (mese VARCHAR, tipologia VARCHAR, vita_media_mesi DOUBLE)")
+    con.executemany("INSERT INTO vmedia VALUES (?,?,?)",
+                    [(r["mese"], r["tipologia"], r["vita_media_mesi"]) for r in records])
+    out = BUILD_DIR / "mef_vita_media.parquet"
+    con.execute(f"COPY vmedia TO '{out}' (FORMAT parquet)")
+    print(f"[normalize] mef vita_media OK {out}: {len(records)} celle")
+
 
 if __name__ == "__main__":
     run()

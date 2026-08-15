@@ -342,32 +342,42 @@ def _mef_csv_links(page_path, suffix_pat):
     return links
 
 
-def _download_mef_csv(page_path, out_name):
-    """Scarica l'ultimo CSV (per data) dalla pagina MEF.
+def _mef_file_date(base):
+    """Data dal nome file MEF.
 
-    I nomi file contengono la data nel formato "al-<giorno>-<mese>-<anno>.csv"
-    (es. "al-31-luglio-2026"). L'ordinamento alfabetico non coincide con quello
-    temporale, quindi si estrae mese+anno e si sceglie il più recente.
+    Formati supportati:
+      'al-31-luglio-2026'  (mese in italiano)
+      '30.06.2026'         (gg.mm.aaaa)
+    Ritorna (anno, mese, giorno) o None.
     """
     MONTHS = {
         "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4, "maggio": 5,
         "giugno": 6, "luglio": 7, "agosto": 8, "settembre": 9, "ottobre": 10,
         "novembre": 11, "dicembre": 12,
     }
+    m = re.search(r"al(\d{1,2})?-?(\d{1,2})-(d{0,10}|[a-z]+)-(\d{4})", base)
+    if m:
+        day, month_txt, year = m.group(2) or m.group(1), m.group(3), m.group(4)
+        month_num = MONTHS.get(month_txt.lower())
+        if month_num is None:
+            return None
+        return (int(year), month_num, int(day))
+    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", base)
+    if m:
+        return (int(m.group(3)), int(m.group(2)), int(m.group(1)))
+    return None
 
+
+def _download_mef_csv(page_path, out_name):
+    """Scarica l'ultimo CSV (per data) dalla pagina MEF."""
     links = _mef_csv_links(page_path, r"\.csv$")
     best = None
     best_key = None
     for link in links:
         base = Path(link).name
-        m = re.search(r"(?:al-|al)(\d{1,2})-(d{0,10}|[a-z]+)-(\d{4})", base)
-        if not m:
+        key = _mef_file_date(base)
+        if key is None:
             continue
-        day, month_txt, year = m.group(1), m.group(2), m.group(3)
-        month_num = MONTHS.get(month_txt.lower())
-        if month_num is None:
-            continue
-        key = (int(year), month_num, int(day))
         if best_key is None or key > best_key:
             best_key = key
             best = link
@@ -392,6 +402,8 @@ def fetch_mef():
       - composizione titoli in circolazione (riepilogo per tipologia, CSV mensile)
       - scadenze per anno (ISIN-level, CSV mensile): emissione, scadenza, cedola,
         circolante -> base per il terzo caso reconcile (flussi che spiegano lo stock)
+      - titoli in scadenza nei prossimi 12 mesi (per mese/tipologia) -> cross-check rollover
+      - vita media ponderata (serie storica mensile) -> benchmark durata
     """
     _download_mef_csv(
         "composizione_titoli_stato",
@@ -400,6 +412,14 @@ def fetch_mef():
     _download_mef_csv(
         "scadenze_titoli_suddivise_anno",
         "mef_scadenze.csv",
+    )
+    _download_mef_csv(
+        "titoli_scadenza_prossimi_12_mesi",
+        "mef_titoli_12m.csv",
+    )
+    _download_mef_csv(
+        "vita_media_ponderata",
+        "mef_vita_media.csv",
     )
 
 

@@ -71,11 +71,17 @@ Stato: prima sessione — scaffold e primo fetch dati
 - **normalize_mef**: `data/build/mef_scadenze.parquet` (515 titoli/tranche, 267 ISIN).
   Include BTP/BOT/CCT + titoli esteri (GLOBAL, EMTN), SURE e NGEU. Date parse,
   cedola estratta, `data_ref` dal header.
+- **nuovi layer MEF**: `mef_titoli_12m.parquet` (per mese x tipologia, file ufficiale),
+  `mef_vita_media.parquet` (serie mensile vita media residua).
 - **Query**: `04_profilo_scadenze.sql` (per anno), `05_rollover_12m.sql`.
 - **Profilo**: picchi 2027 (444 mld), 2028 (370), 2031 (339), 2033 (233);
   coda lunga fino al 2072.
 - **Rollover 12m**: **419 mld EUR = 10,7%** del residuo (sotto soglia 15%).
-- **Signals**: 9 segnali con categorie (debito, costo, sostenibilità, rischio).
+- **Caso reconcile 4**: MEF titoli-12m ufficiale vs nostro ISIN → 8/12 mesi
+  identici, 4 divergono (+53 mld). Anomalia documentata
+  (`2026-08-15_anomalia_rollover_12m.md`): probabile disallineamento di
+  valutazione nominale/rivalutato tra i due file MEF.
+- **Signals**: 10 segnali (aggiunti vita media 7,0 anni).
 
 ## Quadro intelligence (primo quadro completo)
 
@@ -83,7 +89,7 @@ Lo stock di debito è coerente cross-fonte (FPI=Eurostat=OCPI); i titoli Tesoro
 coprono il 101% dei titoli AP. I segnali di sostenibilità raccontano una situazione
 di attenzione ma non allarmante: debito/PIL alto (137%), i-g appena positivo
 (il debito cresce da solo ma di poco), saldo primario positivo (+0,7%), costo
-implicito ~124 mld/anno, rollover 12m 10,7%.
+implicito ~124 mld/anno, rollover 12m 10,7%, vita media 7 anni.
 
 ## Lezione chiave (fusion layer)
 

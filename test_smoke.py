@@ -15,6 +15,7 @@ MEF_SCAD = ROOT / "data" / "build" / "mef_scadenze.parquet"
 RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
+RECON_T12 = ROOT / "data" / "reconcile" / "reconcile_titoli12m_vs_isin.csv"
 
 
 def fail(msg):
@@ -63,6 +64,13 @@ def main():
     if n_isin == 0:
         fail("scadenze mef vuote")
     print(f"[OK] scadenze mef: {n_isin} ISIN distinti")
+
+    if not RECON_T12.exists():
+        fail(f"reconcile titoli12m mancante: {RECON_T12}")
+    recon_t12 = con.execute(f"SELECT count(*) FROM read_csv('{RECON_T12}')").fetchone()[0]
+    if recon_t12 == 0:
+        fail("reconcile titoli12m vuoto")
+    print(f"[OK] reconcile titoli12m: {recon_t12} mesi confrontati")
 
     print("[OK] smoke test superato")
 

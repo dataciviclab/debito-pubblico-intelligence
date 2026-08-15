@@ -21,6 +21,10 @@ Terzo caso: MEF Tesoro scadenze (ISIN-level, circolante titoli) vs FPI debito AP
 titoli (S13.F3). I perimetri NON coincidono (MEF = solo titoli di Stato emessi dal
 Tesoro; FPI = tutti i titoli di tutte le AP) quindi un delta sistematico è atteso;
 l'anomalia reale sarebbe una rottura del rapporto nel tempo.
+
+Quarto caso: MEF "titoli in scadenza 12m" (file ufficiale per mese) vs rollover
+calcolato da noi dal file ISIN-level scadenze. Stessa fonte MEF, due file diversi:
+verifica del nostro parser + perimetro (8/12 mesi collimano, 4 divergono — da capire).
 """
 
 import csv
@@ -165,6 +169,63 @@ def run():
             print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione (detail file)")
     else:
         print("\n[reconcile] mef non disponibile (skip caso 3)")
+
+    # CASO 4: MEF titoli-12m (ufficiale) vs nostro rollover ISIN-level
+    t12 = ROOT / "data" / "build" / "mef_titoli_12m.parquet"
+    scad = ROOT / "data" / "build" / "mef_scadenze.parquet"
+    if t12.exists() and scad.exists():
+        print("\n=== CASO 4: MEF titoli-12m (ufficiale) vs rollover ISIN-level ===")
+        import csv as _csv
+
+        rows = con.execute("""
+            SELECT mese_scadenza, sum(valore_mln_eur)
+            FROM read_parquet('data/build/mef_titoli_12m.parquet')
+            WHERE tipologia = 'TOTALE' GROUP BY 1 ORDER BY 1
+        """).fetchall()
+        off_map = {m: v for m, v in rows}
+
+        ours = con.execute("""
+            SELECT strftime(scadenza, '%Y-%m'), round(sum(circolante_nom_eur)/1e6, 0)
+            FROM read_parquet('data/build/mef_scadenze.parquet')
+            WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)
+            GROUP BY 1 ORDER BY 1
+        """).fetchall()
+
+        report = []
+        for mese, nostro in ours:
+            ufficiale = off_map.get(mese)
+            if ufficiale is None:
+                continue
+            delta = nostro - ufficiale
+            delta_pct = delta / ufficiale * 100 if ufficiale else None
+            report.append({
+                "mese": mese,
+                "ufficiale_mln_eur": round(ufficiale, 0),
+                "isin_mln_eur": round(nostro, 0),
+                "delta_mln_eur": round(delta, 0),
+                "delta_pct": round(delta_pct, 2) if delta_pct is not None else None,
+                "anomalia": "SI" if abs(delta) > 500 else "no",
+            })
+
+        tot_off = sum(r["ufficiale_mln_eur"] for r in report)
+        tot_our = sum(r["isin_mln_eur"] for r in report)
+        print(f"[reconcile] totale 12m: ufficiale {tot_off:,.0f} vs ISIN {tot_our:,.0f} "
+              f"mln EUR (delta {tot_our-tot_off:+,.0f})")
+        n_anom = sum(1 for r in report if r["anomalia"] == "SI")
+        print(f"[reconcile] mesi con delta >500 mln: {n_anom}/{len(report)}")
+        for r in report:
+            if r["anomalia"] == "SI":
+                print(f"[reconcile]   {r['mese']}: uff {r['ufficiale_mln_eur']:,.0f} vs "
+                      f"isin {r['isin_mln_eur']:,.0f} (delta {r['delta_mln_eur']:+,.0f})")
+
+        out = RECON_DIR / "reconcile_titoli12m_vs_isin.csv"
+        with open(out, "w", encoding="utf-8", newline="") as f:
+            w = _csv.writer(f)
+            w.writerow(["mese", "ufficiale_mln_eur", "isin_mln_eur", "delta_mln_eur", "delta_pct", "anomalia"])
+            for r in report:
+                w.writerow([r["mese"], r["ufficiale_mln_eur"], r["isin_mln_eur"],
+                            r["delta_mln_eur"], r["delta_pct"], r["anomalia"]])
+        print(f"[reconcile] OK {out}")
 
 
 if __name__ == "__main__":
