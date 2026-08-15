@@ -16,9 +16,15 @@ Soglia anomalia: |delta| > 2%.
 
 Secondo caso: FPI vs OCPI (serie C "Debito", milioni EUR correnti).
 Le definizioni coincidono (stesso stock Maastricht); il delta conferma la coerenza.
+
+Terzo caso: MEF Tesoro scadenze (ISIN-level, circolante titoli) vs FPI debito AP in
+titoli (S13.F3). I perimetri NON coincidono (MEF = solo titoli di Stato emessi dal
+Tesoro; FPI = tutti i titoli di tutte le AP) quindi un delta sistematico è atteso;
+l'anomalia reale sarebbe una rottura del rapporto nel tempo.
 """
 
 import csv
+import io
 import sys
 from pathlib import Path
 
@@ -106,6 +112,59 @@ def run():
         _compare(con, "ocpi", fpi_dic, ocpi_rows, RECON_DIR / "reconcile_fpi_vs_ocpi.csv")
     else:
         print("\n[reconcile] ocpi non disponibile (skip caso 2)")
+    mef = RAW_DIR / "mef_scadenze.csv"
+    mef_comp = RAW_DIR / "mef_composizione.csv"
+    if mef_comp.exists():
+        print("\n=== CASO 3: MEF composizione titoli (Tesoro) vs FPI debito AP in titoli (F3) ===")
+        # Totale titoli Tesoro in circolazione (mln EUR, stessa unità di FPI)
+        import csv as _csv
+
+        total_mef = None
+        raw = mef_comp.read_bytes()
+        for enc in ("utf-8", "latin-1", "cp1252"):
+            try:
+                text = raw.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        for row in _csv.reader(io.StringIO(text), delimiter=";"):
+            if row and row[0].strip() == "Totale":
+                total_mef = float(row[1].replace(".", "").replace(",", "."))
+                break
+        if total_mef is None:
+            print("[reconcile] MEF composizione: Totale non trovato")
+            return
+        print(f"[reconcile] totale titoli Tesoro in circolazione (MEF): {total_mef:,.0f} mln EUR")
+
+        fpi_f3 = con.execute("""
+            SELECT data, sum(valore_mln_eur)
+            FROM read_parquet('data/mart/debt_fatti.parquet')
+            WHERE (tavola = 'debito_ap_strumenti' AND codice = 'S13.F31')
+               OR (tavola = 'debito_ap_strumenti' AND codice = 'S13.F32')
+            GROUP BY data ORDER BY data DESC LIMIT 1
+        """).fetchall()
+        if fpi_f3 and fpi_f3[0][1]:
+            fpi_titoli = fpi_f3[0][1]
+            ratio = total_mef / fpi_titoli * 100 if fpi_titoli else None
+            print(f"[reconcile] FPI titoli AP (F31+F32, {fpi_f3[0][0]}): {fpi_titoli:,.0f} mln EUR")
+            if ratio:
+                print(f"[reconcile] rapporto MEF/FPI titoli: {ratio:.1f}% "
+                      f"(atteso ~100%: il Tesoro emette quasi tutti i titoli AP)")
+        out = RECON_DIR / "reconcile_mef_vs_fpi.csv"
+        with open(out, "w", encoding="utf-8", newline="") as f:
+            w = _csv.writer(f)
+            w.writerow(["data", "mef_titoli_mln_eur", "fpi_titoli_mln_eur", "rapporto_pct"])
+            w.writerow([fpi_f3[0][0] if fpi_f3 else None, round(total_mef, 0),
+                        round(fpi_titoli, 0) if fpi_titoli else None,
+                        round(ratio, 2) if ratio else None])
+        print(f"[reconcile] OK {out}")
+
+        if mef.exists():
+            n_isin = sum(1 for line in mef.read_bytes().decode("latin-1").splitlines()
+                         if line.startswith("IT"))
+            print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione (detail file)")
+    else:
+        print("\n[reconcile] mef non disponibile (skip caso 3)")
 
 
 if __name__ == "__main__":

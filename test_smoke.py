@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parent
 MART = ROOT / "data" / "mart" / "debt_fatti.parquet"
 RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
+RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
 
 
 def fail(msg):
@@ -47,6 +48,13 @@ def main():
     if recon_ocpi == 0:
         fail("reconcile ocpi vuoto")
     print(f"[OK] reconcile ocpi: {recon_ocpi} anni confrontati")
+
+    if not RECON_MEF.exists():
+        fail(f"reconcile mef mancante: {RECON_MEF}")
+    recon_mef = con.execute(f"SELECT count(*) FROM read_csv('{RECON_MEF}')").fetchone()[0]
+    if recon_mef == 0:
+        fail("reconcile mef vuoto")
+    print(f"[OK] reconcile mef: {recon_mef} record")
 
     print("[OK] smoke test superato")
 

@@ -14,6 +14,7 @@ Il layer source-level conserva il dato grezzo: nessuna colonna originale elimina
 import csv
 import io
 import json
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -331,6 +332,77 @@ def fetch_ocpi():
     print(f"[ocpi] OK {csv_out}: {len(series_rows)} celle")
 
 
+def _mef_csv_links(page_path, suffix_pat):
+    """Estrae link a CSV da una pagina MEF del portale dt.mef.gov.it."""
+    url = f"https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/{page_path}/"
+    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urlopen(req, timeout=30) as resp:
+        html = resp.read().decode("utf-8", "ignore")
+    links = sorted(set(l for l in re.findall(r'href=["\']([^"\']*\.csv)["\']', html, re.I)))
+    return links
+
+
+def _download_mef_csv(page_path, out_name):
+    """Scarica l'ultimo CSV (per data) dalla pagina MEF.
+
+    I nomi file contengono la data nel formato "al-<giorno>-<mese>-<anno>.csv"
+    (es. "al-31-luglio-2026"). L'ordinamento alfabetico non coincide con quello
+    temporale, quindi si estrae mese+anno e si sceglie il più recente.
+    """
+    MONTHS = {
+        "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4, "maggio": 5,
+        "giugno": 6, "luglio": 7, "agosto": 8, "settembre": 9, "ottobre": 10,
+        "novembre": 11, "dicembre": 12,
+    }
+
+    links = _mef_csv_links(page_path, r"\.csv$")
+    best = None
+    best_key = None
+    for link in links:
+        base = Path(link).name
+        m = re.search(r"(?:al-|al)(\d{1,2})-(d{0,10}|[a-z]+)-(\d{4})", base)
+        if not m:
+            continue
+        day, month_txt, year = m.group(1), m.group(2), m.group(3)
+        month_num = MONTHS.get(month_txt.lower())
+        if month_num is None:
+            continue
+        key = (int(year), month_num, int(day))
+        if best_key is None or key > best_key:
+            best_key = key
+            best = link
+    if best is None:
+        print(f"[mef] nessun CSV datato trovato su {page_path}")
+        return None
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    out = RAW_DIR / out_name
+    url = "https://www.dt.mef.gov.it" + best
+    print(f"[mef] download {best} ...")
+    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urlopen(req, timeout=120) as resp:
+        out.write_bytes(resp.read())
+    print(f"[mef] OK {out} ({out.stat().st_size} bytes)")
+    return out
+
+
+def fetch_mef():
+    """MEF Dipartimento del Tesoro — titoli di Stato.
+
+    Scarica:
+      - composizione titoli in circolazione (riepilogo per tipologia, CSV mensile)
+      - scadenze per anno (ISIN-level, CSV mensile): emissione, scadenza, cedola,
+        circolante -> base per il terzo caso reconcile (flussi che spiegano lo stock)
+    """
+    _download_mef_csv(
+        "composizione_titoli_stato",
+        "mef_composizione.csv",
+    )
+    _download_mef_csv(
+        "scadenze_titoli_suddivise_anno",
+        "mef_scadenze.csv",
+    )
+
+
 def run(source=None):
     if source in (None, "fpi"):
         fetch_fpi()
@@ -338,6 +410,8 @@ def run(source=None):
         fetch_eurostat()
     if source in (None, "ocpi"):
         fetch_ocpi()
+    if source in (None, "mef"):
+        fetch_mef()
 
 
 if __name__ == "__main__":

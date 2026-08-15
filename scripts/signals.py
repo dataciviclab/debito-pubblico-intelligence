@@ -3,9 +3,17 @@
 Step signals: segnali con soglie calibrate sullo storico.
 
 Segnali attivi:
-  - debito_totale_ap: livello e variazione m/m del debito AP (S13.MGD)
+  - debito_totale_ap: livello e variazione m/m del debito AP (S13.MGD, FPI)
   - rendimento_10y: ultimo rendimento e variazione m/m (Eurostat irt_lt_mcby_m)
-  - costo_debito_stock: interesse implicito ~ rendimento 10Y x stock debito (ordine di grandezza)
+  - debito_pil: debito/PIL ultimo anno disponibile (Eurostat gov_10dd_edpt1, PC_GDP)
+  - i_g: differenziale interessi-crescita (OCPI serie S) — termometro dinamica debito
+  - saldo_primario: % PIL (OCPI serie G) — capacità di ripagare senza nuovi debiti
+  - spesa_interessi_pil: % PIL (OCPI serie I)
+
+Soglie (bootstrap, da calibrare sul primo storico completo):
+  - debito/PIL: > 130% alto (Italia sopra da anni) — confronto con storico
+  - i-g: > 0 significa debito che cresce da solo (interessi > crescita)
+  - saldo primario: < 0 significa nuovi debiti per coprire la gestione corrente
 
 Output: data/signals/signals.csv + summary a terminale.
 """
@@ -17,75 +25,80 @@ from pathlib import Path
 import duckdb
 
 ROOT = Path(__file__).resolve().parent.parent
-MART_DIR = ROOT / "data" / "mart"
-RAW_DIR = ROOT / "data" / "raw"
 SIG_DIR = ROOT / "data" / "signals"
+
+# (nome, query sorgente, descrizione) — valore atteso: numero
+# ogni riga: SELECT <valore> [, <precedente>] FROM read_csv/parquet(...)
+SIGNAL_QUERIES = {
+    "debito_totale_ap_mln_eur": (
+        "SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
+        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1"
+    ),
+    "debito_totale_ap_mm_pct": (
+        "WITH s AS (SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
+        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 2) "
+        "SELECT (max(valore_mln_eur) - min(valore_mln_eur)) / min(valore_mln_eur) * 100 FROM s"
+    ),
+    "rendimento_10y_pct": (
+        "SELECT rendimento_pct FROM read_csv('data/raw/eurostat_irt_lt_mcby.csv') "
+        "ORDER BY mese DESC LIMIT 1"
+    ),
+    "debito_pil_pct": (
+        "SELECT debito_pil_pct FROM read_csv('data/raw/eurostat_gov10dd.csv') "
+        "WHERE settore='S13' ORDER BY anno DESC LIMIT 1"
+    ),
+    "i_g_pp": (
+        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        "WHERE serie='S' ORDER BY anno DESC LIMIT 1"
+    ),
+    "saldo_primario_pil_pct": (
+        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        "WHERE serie='G' ORDER BY anno DESC LIMIT 1"
+    ),
+    "spesa_interessi_pil_pct": (
+        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        "WHERE serie='I' ORDER BY anno DESC LIMIT 1"
+    ),
+}
+
+SIGNAL_META = {
+    "debito_totale_ap_mln_eur": ("debito totale AP (mln EUR)", "debito", None),
+    "debito_totale_ap_mm_pct": ("variazione debito m/m (%)", "debito", None),
+    "rendimento_10y_pct": ("rendimento 10Y (%)", "costo", None),
+    "debito_pil_pct": ("debito/PIL (%)", "sostenibilita", ">130: alto"),
+    "i_g_pp": ("i-g (pp)", "sostenibilita", ">0: debito cresce da solo"),
+    "saldo_primario_pil_pct": ("saldo primario (% PIL)", "sostenibilita", "<0: nuovo debito per gestione"),
+    "spesa_interessi_pil_pct": ("spesa interessi (% PIL)", "sostenibilita", None),
+}
 
 
 def run():
-    fatti = MART_DIR / "debt_fatti.parquet"
-    rates = RAW_DIR / "eurostat_irt_lt_mcby.csv"
-    if not fatti.exists():
-        print("[ERRORE] mart prima dei segnali")
-        sys.exit(1)
-
     SIG_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
 
-    rows = con.execute("""
-        SELECT data, valore_mln_eur
-        FROM read_parquet('data/mart/debt_fatti.parquet')
-        WHERE tavola = 'debito_ap_sottosettori'
-          AND codice = 'S13.MGD'
-        ORDER BY data DESC
-        LIMIT 13
-    """).fetchall()
+    report = []
+    for name, query in SIGNAL_QUERIES.items():
+        try:
+            val = con.execute(query).fetchone()
+        except Exception as exc:  # fonte opzionale non disponibile
+            print(f"[signals] skip {name}: {exc}")
+            continue
+        if val is None or val[0] is None:
+            continue
+        value = float(val[0])
+        label, cat, soglia = SIGNAL_META[name]
+        report.append({"segnale": name, "descrizione": label, "categoria": cat, "valore": round(value, 3)})
+        msg = f"[signals] {label}: {value:.3f}"
+        if soglia:
+            msg += f"  ({soglia})"
+        print(msg)
 
-    if not rows:
-        print("[signals] nessun dato per debito totale AP (S13.MGD) — verificare codice tavola")
-        sys.exit(0)
-
-    latest = rows[0][1]
-    prev = rows[1][1] if len(rows) > 1 else None
-    delta = (latest - prev) / prev * 100 if prev else None
-    print(f"[signals] debito totale AP: ultimo {latest:,.0f} mln EUR")
-    if delta is not None:
-        print(f"[signals] variazione m/m: {delta:+.2f}%")
-
-    if rates.exists():
-        rrows = con.execute("""
-            SELECT mese, rendimento_pct
-            FROM read_csv('data/raw/eurostat_irt_lt_mcby.csv')
-            ORDER BY mese DESC
-            LIMIT 2
-        """).fetchall()
-        if rrows:
-            r_latest, r_prev = rrows[0][1], (rrows[1][1] if len(rrows) > 1 else None)
-            r_delta = r_latest - r_prev if r_prev is not None else None
-            print(f"[signals] rendimento 10Y: {r_latest:.2f}% (mese {rrows[0][0]})")
-            if r_delta is not None:
-                print(f"[signals] variazione rendimento m/m: {r_delta:+.2f} pp")
-            annual_cost = latest / 100.0 * r_latest / 1000.0
-            print(f"[signals] costo interesse implicito ~ {annual_cost:,.0f} mld EUR/anno (10Y x stock)")
-
-    # Report CSV dei segnali chiave
-    report = [{
-        "segnale": "debito_totale_ap_mln_eur",
-        "valore": round(latest, 0),
-        "variazione_mm_pct": round(delta, 2) if delta is not None else None,
-    }]
-    if rates.exists() and rrows:
-        report.append({
-            "segnale": "rendimento_10y_pct",
-            "valore": r_latest,
-            "variazione_mm_pp": round(r_delta, 2) if r_delta is not None else None,
-        })
     out = SIG_DIR / "signals.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["segnale", "valore", "variazione_mm_pct", "variazione_mm_pp"])
+        w = csv.DictWriter(f, fieldnames=["segnale", "descrizione", "categoria", "valore"])
         w.writeheader()
         w.writerows(report)
-    print(f"[signals] OK {out}")
+    print(f"[signals] OK {out}: {len(report)} segnali")
 
 
 if __name__ == "__main__":

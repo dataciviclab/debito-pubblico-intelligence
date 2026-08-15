@@ -27,7 +27,7 @@ investigare. È ciò che distingue intelligence da aggregazione.
 | Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
 | Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile | SDMX JSON | ✅ integrato |
 | OCPI (Osservatorio Conti Pubblici) | 26 serie storiche 1861-2025 (debito, PIL, i-g, saldo primario) | XLSX | ✅ integrato |
-| MEF / Dipartimento del Tesoro | titoli di Stato, ISIN, aste, scadenze | XLSX/CSV | 🔜 |
+| MEF / Dipartimento del Tesoro | composizione titoli in circolazione + scadenze ISIN-level (CSV mensili) | CSV | ✅ integrato |
 
 ## Pipeline
 
@@ -47,11 +47,11 @@ python3 test_smoke.py  # verifica integrità layer
 
 | Layer | File | Contenuto |
 |---|---|---|
-| Raw | `data/raw/fpi_all.csv`, `data/raw/eurostat_gov10dd*.csv` | fonte scaricata, formato long |
+| Raw | `data/raw/fpi_all.csv`, `eurostat_*.csv`, `ocpi_serie_storiche.csv`, `mef_*.csv` | fonti scaricate |
 | Build | `data/build/fpi_long.csv` | source-level normalizzato (provenienza aggiunta) |
 | Mart | `data/mart/debt_fatti.parquet` | unica fonte per tutte le query |
-| Reconcile | `data/reconcile/reconcile_fpi_vs_eurostat.csv` | delta cross-fonte |
-| Signals | `data/signals/` | segnali con soglie |
+| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (3 casi) |
+| Signals | `data/signals/signals.csv` | segnali con soglie |
 
 ## Contratto dati
 
@@ -65,18 +65,22 @@ Codici chiave Banca d'Italia FPI:
 
 ## Fusion layer (il cuore)
 
-**Stato:** due casi attivi — FPI vs Eurostat e FPI vs OCPI.
+**Stato:** tre casi attivi — FPI vs Eurostat, FPI vs OCPI, MEF vs FPI.
 
 Riconciliazione implementata:
 1. **FPI (dicembre, mln EUR)** vs **Eurostat stock MIO_EUR (annuale)** — stesso
    concetto (debito lordo AP, S13). Delta % con soglia 2%.
 2. **FPI vs OCPI** (serie C "Debito") — stessa definizione Maastricht.
+3. **MEF Tesoro titoli vs FPI titoli AP (F3)** — i titoli di Stato emessi dal
+   Tesoro rispetto a tutti i titoli delle AP.
 
-Esiti primo run:
+Esiti:
 - FPI vs Eurostat: **31 anni (1995-2025), 1 anomalia** (1995, -7% — spiegata,
   divergenza di definizione transitoria all'avvio delle notifiche EDP).
 - FPI vs OCPI: **165 anni (1861-2025), 0 anomalie** — due fonti indipendenti
   (Banca d'Italia vs OCPI che combina ISTAT/FMI/AMECO) allineate al decimale.
+- MEF vs FPI: **101,1%** (giu-2026) — il Tesoro emette praticamente tutti i titoli
+  delle AP. 244 ISIN in circolazione (detail file scadenze).
 
 Ogni delta oltre soglia diventa una **anomalia da investigare**, non un errore.
 

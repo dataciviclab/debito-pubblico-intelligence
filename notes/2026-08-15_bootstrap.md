@@ -55,13 +55,24 @@ Stato: prima sessione — scaffold e primo fetch dati
   (stock MIO_EUR), `eurostat_irt_lt_mcby.csv` (rendimento 10Y mensile 1980-2026).
 - **fetch OCPI integrato**: `ocpi_serie_storiche.csv` (26 serie, 1861-2025, 4.439 celle).
   Scoperta: serie C "Debito" allineata a FPI al decimale; serie S (i-g) disponibile.
-- **reconcile.py con 2 casi attivi**:
+- **fetch MEF Tesoro integrato**: `mef_composizione.csv` (titoli per tipologia, mln EUR)
+  e `mef_scadenze.csv` (ISIN-level: emissione, scadenza, cedola, circolante). Selezione
+  dell'ultimo file per data (nome file datato, mese in italiano). Encoding latin-1.
+- **reconcile.py con 3 casi attivi**:
   - FPI vs Eurostat (31 anni, 1995-2025): 1 anomalia (1995, -7% — spiegata, vedi `2026-08-15_anomalia_1995.md`).
   - FPI vs OCPI (165 anni, 1861-2025): **0 anomalie**, delta 2025 = -0,01%.
-- **signals.py esteso**: rendimento 10Y (3,88% lug-2026), costo interesse implicito
-  (~124 mld EUR/anno da 10Y x stock).
-- **Fix nel percorso**: decoder Eurostat generalizzato (dimensione `unit`);
-  ordinamento esplicito in reconcile; fetch OCPI con cache xlsx + estrazione CSV.
+  - MEF vs FPI (giu-2026): **101,1%** — il Tesoro emette quasi tutti i titoli AP. 244 ISIN.
+- **signals.py riscritto**: registro di 7 segnali con soglie e categorie
+  (debito, costo, sostenibilità). Include debito/PIL (137,1%), i-g (+0,35pp),
+  saldo primario (+0,7%), spesa interessi (3,8%), rendimento 10Y (3,88%).
+
+## Quadro intelligence (primo quadro completo)
+
+Lo stock di debito è coerente cross-fonte (FPI=Eurostat=OCPI); i titoli Tesoro
+coprono il 101% dei titoli AP. I segnali di sostenibilità raccontano una situazione
+di attenzione ma non allarmante: debito/PIL alto (137%), i-g appena positivo
+(il debito cresce da solo ma di poco), saldo primario positivo (+0,7%), costo
+implicito ~124 mld/anno.
 
 ## Lezione chiave (fusion layer)
 
