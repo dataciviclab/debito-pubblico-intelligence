@@ -13,6 +13,7 @@ Il layer source-level conserva il dato grezzo: nessuna colonna originale elimina
 
 import csv
 import io
+import json
 import sys
 import zipfile
 from pathlib import Path
@@ -152,8 +153,89 @@ def fetch_fpi(filter_year=None):
     print(f"[fpi] OK {out}: {len(all_rows)} righe")
 
 
+def _eurostat_series(payload):
+    """Decodifica un payload SDMX JSON Eurostat in righe long.
+
+    Gestisce dimensioni variabili: ogni dimensione in payload['id'] (ordine fisso)
+    contribuisce alla posizione flat con stride = prodotto delle size successive.
+    Il codice di ogni dimensione è derivato dall'index delle category.
+    """
+    dims = payload["id"]
+    categories = {d: payload["dimension"][d]["category"]["index"] for d in dims}
+    labels = {d: payload["dimension"][d]["category"]["label"] for d in dims}
+    sizes = [len(categories[d]) for d in dims]
+
+    strides = []
+    acc = 1
+    for s in reversed(sizes):
+        strides.append(acc)
+        acc *= s
+    strides.reverse()
+
+    def decode(pos):
+        coords = {}
+        for i, d in enumerate(dims):
+            coord = pos // strides[i]
+            pos %= strides[i]
+            code = [c for c, idx in categories[d].items() if idx == coord]
+            coords[d] = code[0] if code else ""
+        return coords
+
+    rows = []
+    for value_key, val in payload["value"].items():
+        coords = decode(int(value_key))
+        rows.append({
+            **coords,
+            "valore": val,
+        })
+
+    rows.sort(key=lambda r: tuple(r.get(d, "") for d in dims))
+    return rows
+
+
+def _eurostat_get(dataset, params):
+    url = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}"
+    qs = "&".join(f"{k}={v}" for k, v in params.items())
+    req = Request(f"{url}?{qs}", headers={"User-Agent": USER_AGENT})
+    with urlopen(req) as resp:
+        return json.load(resp)
+
+
 def fetch_eurostat():
-    print("[eurostat] ... da implementare (SDMX gov_10dd_edpt1, irt_lt_mcby_m)")
+    print("[eurostat] debito/PIL per settore (gov_10dd_edpt1, PC_GDP, na_item=GD) ...")
+    payload = _eurostat_get("gov_10dd_edpt1", {"geo": "IT", "unit": "PC_GDP", "na_item": "GD"})
+    rows = _eurostat_series(payload)
+    for r in rows:
+        r["anno"] = r.pop("time")
+        r["settore"] = r.pop("sector")
+        r["debito_pil_pct"] = r.pop("valore")
+        for k in ("freq", "unit", "geo", "na_item"):
+            r.pop(k, None)
+
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    out = RAW_DIR / "eurostat_gov10dd.csv"
+    with open(out, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["anno", "settore", "debito_pil_pct"])
+        w.writeheader()
+        w.writerows(rows)
+    print(f"[eurostat] OK {out}: {len(rows)} righe")
+
+    print("[eurostat] stock debito in MIO_EUR (gov_10dd_edpt1, na_item=GD) ...")
+    payload = _eurostat_get("gov_10dd_edpt1", {"geo": "IT", "unit": "MIO_EUR", "na_item": "GD"})
+    rows = _eurostat_series(payload)
+    for r in rows:
+        r["anno"] = r.pop("time")
+        r["settore"] = r.pop("sector")
+        r["stock_mln_eur"] = r.pop("valore")
+        for k in ("freq", "unit", "geo", "na_item"):
+            r.pop(k, None)
+
+    out = RAW_DIR / "eurostat_gov10dd_stock.csv"
+    with open(out, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["anno", "settore", "stock_mln_eur"])
+        w.writeheader()
+        w.writerows(rows)
+    print(f"[eurostat] OK {out}: {len(rows)} righe")
 
 
 def fetch_ocpi():

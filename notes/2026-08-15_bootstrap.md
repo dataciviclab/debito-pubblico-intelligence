@@ -41,6 +41,19 @@ Stato: prima sessione — scaffold e primo fetch dati
 
 - [x] Verificare download FPI reale e generare primo mart (`make fpi mart test`) — DONE
 - [x] Calibrare codici reali FPI nel signals.py (S13.MGD verificato sui dati veri) — DONE
-- [ ] Eurostat SDMX: gov_10dd_edpt1 (debito/PIL) come prima fonte di riconciliazione
-- [ ] Primo reconcile: FPI mensile vs Eurostat trimestrale → delta oltre soglia
-- [ ] Decide se il repo diventa git init (oggi no — solo cartella locale) e se registrare fonte in source-observatory
+- [x] Eurostat SDMX: gov_10dd_edpt1 (debito/PIL) come prima fonte di riconciliazione — DONE
+- [x] Primo reconcile: FPI mensile vs Eurostat trimestrale → delta oltre soglia — DONE
+- [ ] Investigare anomalia 1995 (delta -7% FPI vs Eurostat, probabile revisione storica)
+- [ ] Eurostat irt_lt_mcby_m (rendimento 10Y) per segnale costo/rendimento
+- [ ] OCPI serie lunghe (i-g) — file già in /tmp/ocpi_serie_storiche.xlsx
+- [ ] Decide se registrare fonte in source-observatory
+
+## Fusion layer (aggiornamento)
+
+- **fetch Eurostat integrato** (SDMX JSON, decoder generalizzato multi-dimensione):
+  `eurostat_gov10dd.csv` (debito/PIL per settore) e `eurostat_gov10dd_stock.csv` (stock MIO_EUR).
+- **reconcile.py attivo**: FPI dicembre vs Eurostat stock annuale (S13).
+  Esito: 31 anni confrontati (1995-2025), **1 anomalia** (1995, -7%).
+  Anni recenti delta 0.0 — le fonti usano la stessa definizione Maastricht.
+- **Fix nel percorso**: decoder Eurostat generalizzato (dimensione `unit` nel payload);
+  ordinamento esplicito in reconcile (senza ORDER BY il report era disordinato).

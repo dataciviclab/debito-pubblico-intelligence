@@ -24,7 +24,7 @@ investigare. È ciò che distingue intelligence da aggregazione.
 | Fonte | Cosa | Protocollo | Stato |
 |---|---|---|---|
 | Banca d'Italia BDS — FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze | CSV/ZIP | ✅ integrato |
-| Eurostat — gov_10dd_edpt1 | debito/PIL trimestrale (standard Maastricht/EDP) | SDMX | 🔜 |
+| Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
 | Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y) | SDMX | 🔜 |
 | MEF / Dipartimento del Tesoro | titoli di Stato, ISIN, aste, scadenze | XLSX/CSV | 🔜 |
 | OCPI (Osservatorio Conti Pubblici) | serie storiche lunghe 1861-2025 (i-g, saldo primario) | XLSX | 🔜 |
@@ -47,10 +47,10 @@ python3 test_smoke.py  # verifica integrità layer
 
 | Layer | File | Contenuto |
 |---|---|---|
-| Raw | `data/raw/fpi_all.csv` | tutte le tavole FPI, formato long, colonne originali |
+| Raw | `data/raw/fpi_all.csv`, `data/raw/eurostat_gov10dd*.csv` | fonte scaricata, formato long |
 | Build | `data/build/fpi_long.csv` | source-level normalizzato (provenienza aggiunta) |
 | Mart | `data/mart/debt_fatti.parquet` | unica fonte per tutte le query |
-| Reconcile | `data/reconcile/` | delta cross-fonte (bootstrap) |
+| Reconcile | `data/reconcile/reconcile_fpi_vs_eurostat.csv` | delta cross-fonte |
 | Signals | `data/signals/` | segnali con soglie |
 
 ## Contratto dati
@@ -65,10 +65,17 @@ Codici chiave Banca d'Italia FPI:
 
 ## Fusion layer (il cuore)
 
-**Stato:** framework pronto, primo caso da implementare.
+**Stato:** primo caso attivo — riconciliazione FPI vs Eurostat (stock).
+
+Riconciliazione implementata:
+1. **FPI (dicembre, mln EUR)** vs **Eurostat stock MIO_EUR (annuale)** — stesso
+   concetto (debito lordo AP, S13). Delta % con soglia 2%.
+
+Esito primo run: **31 anni confrontati (1995-2025), 1 sola anomalia** (1995, -7%).
+Gli anni recenti mostrano delta 0.0: le fonti usano la stessa definizione Maastricht.
+L'anomalia 1995 è da investigare (probabile revisione storica).
 
 Riconciliazione prevista:
-1. **FPI (mensile)** vs **Eurostat EDP (trimestrale)** — lo stock di debito AP
 2. **FPI** vs **OCPI (annuale, 1861-2025)** — serie lunga e i-g
 3. **MEF Tesoro (emissioni)** vs **FPI (stock)** — flussi che spiegano lo stock
 
