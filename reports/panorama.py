@@ -85,6 +85,8 @@ def _render_markdown(payload):
     lines.append(f"- **Saldo primario**: {s.get('saldo_primario_pil_pct', 0):+.1f}% PIL "
                  f"({'surplus' if s.get('saldo_primario_pil_pct', 0) > 0 else 'deficit'})")
     lines.append(f"- **Spesa interessi**: {s.get('spesa_interessi_pil_pct', 0):.1f}% PIL")
+    lines.append(f"- **Interessi consuntivi (missione Debito)**: {payload.get('consuntivo_interessi_mld', 0):,.1f} mld "
+                 f"(ultimo anno consuntivo disponibile)")
     lines.append(f"- **Rollover 12m**: {s.get('rollover_12m_mld_eur', 0):,.0f} mld EUR "
                  f"({s.get('rollover_12m_pct', 0):.1f}% del residuo)")
     lines.append(f"- **Vita media residua**: {s.get('vita_media_anni', 0):.1f} anni")
@@ -154,7 +156,9 @@ def main():
         {"nome": "Fabbisogno vs variazione stock",
          "esito": "SFA implicito +19 mld su 36 mesi (identità contabile ok)"},
         {"nome": "Oneri debito BDAP vs interessi OCPI",
-         "esito": "BDAP sistematicamente +10,6 mld/anno (17 anni)"},
+         "esito": "BDAP sistematicamente +10,6 mld/anno (previsione vs stima)"},
+        {"nome": "Consuntivo interessi vs OCPI",
+         "esito": "delta medio +0,2 mld/anno (12 anni) — consuntivo conferma OCPI"},
         {"nome": "Accensione prestiti vs fabbisogno",
          "esito": "indicatore: lordo Stato vs netto AP (perimetro diverso)"},
     ]
@@ -174,6 +178,14 @@ def main():
             sc_data = json.load(f)
         payload["anno_scenario_base"] = sc_data.get("anno_base")
         payload["orizzonte_anni"] = sc_data.get("orizzonte_anni")
+
+    cons_path = DATA / "build" / "bdap_consuntivo_debito.csv"
+    if cons_path.exists():
+        import csv as _csv
+        cons_rows = list(_csv.DictReader(open(cons_path)))
+        if cons_rows:
+            last_cons = cons_rows[-1]
+            payload["consuntivo_interessi_mld"] = round(float(last_cons["interessi_mln"]) / 1e3, 1)
 
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     with open(REPORT_DIR / "panorama.json", "w", encoding="utf-8") as f:

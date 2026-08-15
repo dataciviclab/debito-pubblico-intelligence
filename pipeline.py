@@ -40,6 +40,7 @@ def main():
     elif args.step == "reconcile":
         from scripts import bdap
         bdap.build_summary()
+        bdap.build_consuntivo()
         from scripts import reconcile
         reconcile.run()
     elif args.step == "signals":

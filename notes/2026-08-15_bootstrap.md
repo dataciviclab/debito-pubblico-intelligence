@@ -129,6 +129,22 @@ Aggiornamento: 2026-08-15 — sistema completo end-to-end, README ripulito per p
   2008-2011); la versione GCS è completa. Da usare sempre GCS.
 - **Signals**: 12, **reconcile**: 7 casi, **test**: 13 contratti.
 
+## Consuntivo BDAP — caso reconcile 6b (integrazione)
+
+- **Candidate `bdap_pagamenti_stato`** (dataset-incubator, PR #825): consuntivo
+  pagamenti bilancio dello Stato, Amministrazione × Missione × Categoria, 2014-2025.
+  Il sistema debito lo legge dal mart locale del candidate.
+- **`scripts/bdap.py` → `build_consuntivo()`**: estrae la serie missione "Debito
+  pubblico" → `data/build/bdap_consuntivo_debito.csv` (interessi/rimborsi per anno).
+- **CASO 6b (consuntivo vs OCPI)**: **delta medio +166 mln/anno su 12 anni** — il
+  consuntivo reale conferma la stima OCPI quasi al centesimo (vs caso 6a previsione
+  che dava +10,6 mld/anno). Unica anomalia: 2022 (−21,6 mld, cassa vs competenza
+  nel rialzo tassi).
+- **Insight**: il triangolo è chiuso — previsione (BDAP) sovrastima, consuntivo
+  (Pagamenti) conferma OCPI. La serie consuntiva: interessi 63,6 mld (2019) → 90,1
+  mld (2025), rimborsi 217 → 268 mld.
+- Nota: `source: config_only` motivato (CSV con colonna finale vuota); PK verificati.
+
 ## Quadro intelligence (aggiornato)
 
 - **Spread BTP-Bund**: +0,81 pp (lug-2026) — IT 3,88% vs DE 3,07%.

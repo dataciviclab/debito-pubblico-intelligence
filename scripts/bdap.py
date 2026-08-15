@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Estrattore BDAP Stato (entrate/spese) — consuma i clean parquet dal catalogo GCS.
+Estrattore BDAP Stato (entrate/spese + consuntivo pagamenti).
 
-Non scarica nulla: legge direttamente i dataset già pubblicati dal Lab
-(bdap_entrate_stato, bdap_spese_stato) via lab_connectors.gcs.paths.
-Usato da reconcile per i casi 6 (oneri vs interessi OCPI) e 7 (accensione
-prestiti vs fabbisogno FPI).
+Non scarica nulla: legge i dataset già prodotti dal Lab.
+- bdap_entrate_stato, bdap_spese_stato (previsioni) via GCS lab_connectors.gcs.paths
+- bdap_pagamenti_stato (CONSUNTIVO) dal mart locale del candidate in dataset-incubator
+  (quando il candidate sarà promosso, il path migrerà su GCS)
+
+Usato da reconcile per:
+  caso 6: oneri consuntivi vs interessi OCPI (e vs oneri previsti BDAP)
+  caso 7: accensione prestiti vs fabbisogno FPI
 
 Output (celle estratte, non layer):
-  data/build/bdap_stato_summary.csv — per anno: entrate tributarie,
-    accensione prestiti, oneri debito, rimborsi, totale spese
+  data/build/bdap_stato_summary.csv   — per anno: trib, accensione, oneri, rimborsi
+  data/build/bdap_consuntivo_debito.csv — serie consuntivo missione Debito pubblico
 """
 
 import csv
@@ -22,6 +26,12 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD_DIR = ROOT / "data" / "build"
 
 YEARS = range(2008, 2025)
+
+# Mart locale del candidate bdap-pagamenti-stato (dataset-incubator)
+CANDIDATE_MART = Path(
+    "/home/gabry/dev/dataciviclab-workspace/dataset-incubator/out/data/mart/"
+    "bdap_pagamenti_stato"
+)
 
 
 def _url(slug, year):
@@ -83,5 +93,45 @@ def build_summary():
     return out
 
 
+def build_consuntivo():
+    """Serie consuntiva della missione 'Debito pubblico' (interessi/rimborsi).
+
+    Legge il mart locale del candidate bdap_pagamenti_stato (2014-2025).
+    Quando il candidate sarà promosso, migrare il path su GCS.
+    """
+    if not CANDIDATE_MART.exists():
+        print("[bdap] consuntivo: mart candidate non presente (skip) — atteso se candidate non runnato")
+        return None
+
+    con = duckdb.connect()
+    files = sorted(CANDIDATE_MART.glob("*/mart_pagamenti_missione_categoria.parquet"))
+    if not files:
+        print("[bdap] consuntivo: nessun parquet mart trovato (skip)")
+        return None
+
+    # lista file come stringhe per read_parquet()
+    file_strs = [str(f) for f in files]
+    rows = con.execute(f"""
+        SELECT esercizio_finanziario AS anno,
+               round(sum(CASE WHEN upper(categoria) LIKE '%INTERESSI%' THEN totale_pagato END)/1e6, 1) AS interessi_mln,
+               round(sum(CASE WHEN upper(categoria) LIKE '%RIMBORSO%' THEN totale_pagato END)/1e6, 1) AS rimborsi_mln,
+               round(sum(totale_pagato)/1e6, 1) AS totale_mln
+        FROM read_parquet({file_strs!r})
+        WHERE upper(missione) LIKE '%DEBITO%'
+        GROUP BY 1 ORDER BY 1
+    """).fetchall()
+
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    out = BUILD_DIR / "bdap_consuntivo_debito.csv"
+    with open(out, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["anno", "interessi_mln", "rimborsi_mln", "totale_mln"])
+        for r in rows:
+            w.writerow(r)
+    print(f"[bdap] consuntivo OK {out}: {len(rows)} anni")
+    return out
+
+
 if __name__ == "__main__":
     build_summary()
+    build_consuntivo()

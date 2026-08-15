@@ -354,6 +354,40 @@ def run():
             w.writerows(report6)
         print(f"[reconcile] OK {out6}")
 
+        # SOTTOCASO 6b: CONSUNTIVO missione debito vs interessi OCPI
+        consuntivo = ROOT / "data" / "build" / "bdap_consuntivo_debito.csv"
+        if consuntivo.exists():
+            print("\n=== CASO 6b: consuntivo interessi (pagati) vs OCPI ===")
+            report6b = []
+            for r in _csv.DictReader(open(consuntivo)):
+                anno = int(r["anno"])
+                cons = float(r["interessi_mln"])
+                ocpi_v = ocpi_int.get(anno)
+                if ocpi_v is None:
+                    continue
+                delta = cons - ocpi_v
+                report6b.append({
+                    "anno": anno,
+                    "consuntivo_mln_eur": round(cons, 0),
+                    "ocpi_mln_eur": round(ocpi_v, 0),
+                    "delta_mln_eur": round(delta, 0),
+                    "delta_pct": round(delta / ocpi_v * 100, 1),
+                })
+            tot6b = sum(r["delta_mln_eur"] for r in report6b)
+            avg6b = tot6b / len(report6b) if report6b else None
+            print(f"[reconcile] consuntivo vs OCPI: {len(report6b)} anni, "
+                  f"delta medio {avg6b:+.0f} mln/anno" if avg6b is not None else "nessun dato")
+            for r in report6b:
+                print(f"[reconcile]   {r['anno']}: cons {r['consuntivo_mln_eur']:,.0f} vs "
+                      f"OCPI {r['ocpi_mln_eur']:,.0f} (delta {r['delta_mln_eur']:+,.0f} = {r['delta_pct']:+.1f}%)")
+            out6b = RECON_DIR / "reconcile_consuntivo_vs_ocpi.csv"
+            with open(out6b, "w", encoding="utf-8", newline="") as f:
+                w = _csv.DictWriter(f, fieldnames=["anno", "consuntivo_mln_eur", "ocpi_mln_eur",
+                                                   "delta_mln_eur", "delta_pct"])
+                w.writeheader()
+                w.writerows(report6b)
+            print(f"[reconcile] OK {out6b}")
+
         print("\n=== CASO 7: accensione prestiti BDAP vs fabbisogno AP FPI ===")
         # fabbisogno annuale: somma del fabbisogno mensile S13.MGD per anno
         fab_annual = con.execute("""
