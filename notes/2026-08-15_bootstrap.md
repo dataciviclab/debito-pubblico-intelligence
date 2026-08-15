@@ -112,9 +112,16 @@ Aggiornamento: 2026-08-15 — sistema completo end-to-end, README ripulito per p
   `lab_connectors.gcs.paths.gs_url`), non duplica il fetch. Produce
   `data/build/bdap_stato_summary.csv` (17 anni, 2008-2024): entrate tributarie,
   accensione prestiti (Titolo IV), oneri debito, rimborsi, totale spese.
-- **Caso 6 (oneri BDAP vs OCPI)**: oneri del debito a bilancio **+10,6 mld/anno
-  sistematici** vs interessi OCPI (17 anni). Il costo "vero" supera la stima:
-  include voci di gestione. Unica eccezione 2022 (BDAP sotto di 7 mld).
+- **Caso 6 (oneri BDAP vs OCPI)**: INDICATORE, non confronto pari. Diagnosi completata:
+  - `stato_previsione` = codice ministero (02 = MEF), NON stato della previsione.
+    Gli oneri del debito sono interamente MEF (96,8 mld su 96,8 nel 2024).
+  - BDAP (solo Stato centrale) SUPERA OCPI (tutte le AP) di ~10-18 mld/anno →
+    la voce "oneri per il servizio del debito" è più larga degli interessi puri
+    (include spese di emissione/collocamento + voci di cassa su titoli indicizzati).
+  - BDAP = previsione (note candidate: "Previsioni Definitive ≠ spesa effettiva");
+    OCPI = consuntivo a competenza. Confronto quindi non "pari".
+  - Eccezione 2022 (−7 mld) coerente: rialzo tassi → competenza (OCPI) > cassa (BDAP).
+  - Per quantificare voce-per-voce servirebbe il RENDICONTO CONSUNTIVO MEF (non disponibile).
 - **Caso 7 (accensione vs fabbisogno)**: INDICATORE, non identità. Accensione
   (lordo Stato) ≈ fabbisogno (netto AP) + rimborsi + residuo per riserve di
   liquidità. Perimetro diverso (Stato vs AP) → delta 30-180 mld attesi.

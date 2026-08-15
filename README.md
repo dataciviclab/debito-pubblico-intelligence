@@ -29,8 +29,10 @@ Esempi di cosa il sistema ha già rilevato:
   titolo una volta per tranche; un parser ingenuo li somma due volte. Il fusion layer
   l'ha scovato (~53 mld di differenza) e il parser è stato corretto.
 - **Costo del debito a bilancio**: gli oneri pagati dal bilancio dello Stato (BDAP)
-  superano gli interessi misurati dall'OCPI di ~10,6 mld/anno — la differenza tra
-  costo "vero" e stima, verificata su 17 anni.
+  superano gli interessi misurati dall'OCPI di ~10-18 mld/anno. È un indicatore di
+  scostamento tra costo "vero" a bilancio e stima interessi — la voce BDAP è più
+  larga (include spese di emissione e voci di cassa) e si basa su previsioni, non
+  su consuntivo.
 
 ## I segnali (cosa osserviamo)
 

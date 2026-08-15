@@ -32,7 +32,14 @@ Il delta è il SFA implicito — la parte di variazione del debito non spiegata 
 fabbisogno (es. operazioni fuori bilancio, riallocazioni, effetti di cambio).
 
 Sesto caso: oneri del debito a bilancio (BDAP spese Stato) vs interessi OCPI.
-Il costo "vero" del debito dal bilancio (include gestione) vs la serie interessi.
+INDICATORE, non confronto pari tra stessi concetti. Verificato:
+- gli oneri BDAP sono interamente del MEF (stato_previsione = codice ministero, 02 = MEF)
+- BDAP (solo Stato centrale) SUPERA OCPI (tutte le AP) di ~10-18 mld/anno → la voce
+  "oneri per il servizio del debito" è definita più larga degli interessi puri:
+  include spese di emissione/collocamento e voci di cassa su titoli indicizzati
+- BDAP è PREVISIONE (≠ consuntivo, come da note candidate); OCPI è consuntivo a competenza
+- l'eccezione 2022 (OCPI sopra di 7 mld) è coerente col rialzo dei tassi (competenza > cassa)
+Valore: mostra lo scostamento sistematico tra costo "vero" a bilancio e stima interessi.
 
 Settimo caso: accensione prestiti (BDAP entrate Stato, Titolo IV) vs fabbisogno FPI.
 INDICATORE, non identità esatta: l'accensione è il flusso LORDO dello Stato (include
