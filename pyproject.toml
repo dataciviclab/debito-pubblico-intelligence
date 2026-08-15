@@ -1,0 +1,9 @@
+[project]
+name = "debito-pubblico-intelligence"
+version = "0.1.0"
+description = "Intelligence sul debito pubblico italiano — riconciliazione multi-fonte, segnali e mart queryabile"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.0",
+    "lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git",
+]
