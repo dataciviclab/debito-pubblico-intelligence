@@ -3,7 +3,7 @@ WITH serie AS (
   SELECT data, valore_mln_eur,
          lag(valore_mln_eur) OVER (ORDER BY data) AS prev
   FROM read_parquet('data/mart/debt_fatti.parquet')
-  WHERE tavola = 'Debito AP per sottosettori'
+  WHERE tavola = 'debito_ap_sottosettori'
     AND codice = 'S13.MGD'
 )
 SELECT data, valore_mln_eur,
