@@ -3,132 +3,98 @@
 **Quanto debito ha davvero lo Stato italiano? Le fonti ufficiali raccontano la stessa storia?**
 
 Sistema di intelligence sul debito pubblico italiano: raccoglie le fonti ufficiali,
-le riconcilia tra loro e trasforma i dati in segnali — non un aggregatore, ma uno
-strumento che rileva quando i numeri "non tornano" e perché.
+le riconcilia tra loro e trasforma i dati in segnali. Non è un aggregatore — è uno
+strumento che rileva quando i numeri "non tornano" e perché, e che simula cosa
+succederebbe al debito se le condizioni cambiassero.
 
-- **Stato:** bootstrap (2026-08-15)
-- **Copertura:** Italia, serie dal 1861 (FPI mensile)
+- **Copertura:** Italia, serie dal 1861 (Banca d'Italia FPI, mensile)
 - **Unità di analisi:** Amministrazioni Pubbliche, sottosettori, strumenti, detentori
+- **Output pubblico:** `data/reporting/panorama.md` — un foglio riassuntivo aggiornato a ogni run
 
-## La domanda civica
+## Cosa risponde
 
-**Le fonti ufficiali sul debito pubblico italiano (Banca d'Italia, MEF, Eurostat,
-ISTAT) sono coerenti tra loro? E cosa ci dicono sulla sostenibilità del debito?**
+**Le fonti ufficiali sul debito pubblico italiano (Banca d'Italia, Eurostat, MEF,
+OCPI) sono coerenti tra loro? E cosa ci dicono sulla sostenibilità del debito?**
 
-Questa repo risponde con un **fusion layer**: il debito visto da ogni fonte viene
-allineato su definizioni esplicite e i delta oltre soglia diventano anomalie da
-investigare. È ciò che distingue intelligence da aggregazione.
+Il cuore del sistema è il **fusion layer**: lo stesso numero — il debito dello Stato —
+viene letto da fonti indipendenti e confrontato. Se tutti dicono la stessa cifra, il
+dato è affidabile. Se divergono, il sistema accende un allarme e va a capire perché:
+spesso è una differenza legittima di definizione, a volte è un errore vero nei dati.
 
-## Fonti
+Esempi di cosa il sistema ha già rilevato:
+- **165 anni di storia**: Banca d'Italia e OCPI raccontano lo stesso debito, al decimale.
+- **Anomalia 1995**: Eurostat diverga dal 1995 — spiegata come cambio di definizione
+  (notifiche EDP), non errore.
+- **Doppio conteggio trovato e corretto**: il file scadenze del Tesoro elenca ogni
+  titolo una volta per tranche; un parser ingenuo li somma due volte. Il fusion layer
+  l'ha scovato (~53 mld di differenza) e il parser è stato corretto.
 
-| Fonte | Cosa | Protocollo | Stato |
-|---|---|---|---|
-| Banca d'Italia BDS — FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze | CSV/ZIP | ✅ integrato |
-| Eurostat — gov_10dd_edpt1 | debito/PIL e stock debito in MIO_EUR (standard Maastricht/EDP) | SDMX JSON | ✅ integrato |
-| Eurostat — irt_lt_mcby_m | rendimento riferimento lungo termine (10Y), mensile (IT + DE) | SDMX JSON | ✅ integrato |
-| OCPI (Osservatorio Conti Pubblici) | 26 serie storiche 1861-2025 (debito, PIL, i-g, saldo primario) | XLSX | ✅ integrato |
-| MEF / Dipartimento del Tesoro | composizione, scadenze ISIN, titoli 12m, vita media (CSV mensili) | CSV | ✅ integrato |
+## I segnali (cosa osserviamo)
 
-## Pipeline
+Il sistema accende spie su cinque dimensioni, tutte da dati ufficiali:
 
-```
-fetch -> normalize -> mart -> reconcile -> signals
-```
-
-```bash
-make all        # pipeline completa: fetch + normalize + mart + reconcile + signals + scenario + panorama + test
-make fpi        # solo download Banca d'Italia FPI
-make mart       # rebuild mart (comando quotidiano)
-make reconcile  # fusion layer
-make scenario   # scenari di sostenibilità (traiettorie debito/PIL)
-make panorama   # deliverable: data/reporting/panorama.md + .json
-python3 test_smoke.py  # verifica integrità layer
-```
-
-## Layer dati
-
-| Layer | File | Contenuto |
+| Segnale | Cosa misura | Stato recente |
 |---|---|---|
-| Raw | `data/raw/fpi_all.csv`, `eurostat_*.csv`, `ocpi_serie_storiche.csv`, `mef_*.csv` | fonti scaricate |
-| Build | `data/build/fpi_long.csv`, `data/build/mef_scadenze.parquet` | source-level normalizzato |
-| Mart | `data/mart/debt_fatti.parquet` | unica fonte per le query debito |
-| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (5 casi) |
-| Signals | `data/signals/signals.csv` | segnali con soglie |
-| Scenarios | `data/scenarios/scenarios.json` | traiettorie debito/PIL per ipotesi |
-| Reporting | `data/reporting/panorama.md` + `.json` | deliverable pubblico |
+| **Debito / PIL** | dimensione del debito rispetto alla produzione annuale | ~137% |
+| **i−g** | quanto il debito cresce *da solo* (interessi meno crescita) | appena sopra zero |
+| **Saldo primario** | lo Stato incassa più di quanto spende (senza interessi) | positivo, di poco |
+| **Rollover 12m** | quanto debito va rimborsato entro 12 mesi | ~360 mld (12,7%) |
+| **Spread BTP-Bund** | quanto il mercato ci fa pagare in più della Germania | ~0,8 pp |
 
 ## Scenari di sostenibilità
 
-`data/scenarios/scenarios.json` proietta il debito/PIL per 5 anni usando
-l'identità di sostenibilità `d(t+1) = d(t)·(1+i)/(1+g) − sp`, a partire
-dall'ultimo valore reale OCPI. Combina ipotesi su costo del debito (i),
-crescita (g) e avanzo primario (sp) per capire **quali leve cambiano davvero
-la traiettoria** — non per prevedere il futuro.
+Partendo dall'ultimo valore reale del debito/PIL, il sistema proietta la traiettoria
+a 5 anni sotto ipotesi diverse su costo del debito (i), crescita (g) e avanzo
+primario (sp), usando l'identità di sostenibilità:
 
-Esito riferimento (base 2025, 137,1%): stato attuale −1,2pp in 5 anni
-(quasi piatto); crescita debole +9,7pp; stress +17,8pp; avanzo primario al 3%
-−12,8pp. L'avanzo primario è la leva sotto controllo politico con effetto
-maggiore.
+```
+d(t+1) = d(t)·(1+i)/(1+g) − sp
+```
 
-## Contratto dati
+Risultato chiave (base 2025, 137,1%): **lo stato attuale è quasi stabile** (−1,2pp in
+5 anni); la **crescita debole** (+9,7pp) e i **tassi alti** (+3pp) lo farebbero salire;
+un **avanzo primario al 3%** (−12,8pp) è la leva sotto controllo politico con effetto
+maggiore. Non previsioni, ma sensibilità: "cosa cambia se...".
 
-Il mart `debt_fatti` ha granularità **data x tavola x codice** con colonne:
-`data`, `tavola`, `codice`, `descrizione`, `valore_mln_eur`, `fonte`.
+## Fonti
 
-Codici chiave Banca d'Italia FPI:
-- `S13.MGD` — debito lordo Amministrazioni Pubbliche (tavola TCCE0225)
-- `S1311`/`S1313`/`S1314` — sottosettori (centrale, locale, enti previdenza)
-- `F3` / `F4` — strumenti: titoli / prestiti
+| Fonte | Cosa fornisce |
+|---|---|
+| Banca d'Italia — BDS FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze (mensile) |
+| Eurostat — `gov_10dd_edpt1` | debito/PIL e stock in milioni di euro (standard Maastricht/EDP) |
+| Eurostat — `irt_lt_mcby_m` | rendimento a lungo termine (10Y), Italia e Germania |
+| OCPI (Università Cattolica) | 26 serie storiche 1861-2025 (debito, PIL, i−g, saldo primario, interessi) |
+| MEF — Dipartimento del Tesoro | composizione e scadenze dei titoli di Stato (ISIN-level), vita media |
 
-### Profilo scadenze (ISIN-level, MEF Tesoro)
+Tutte le fonti sono pubbliche e verificabili.
 
-`data/build/mef_scadenze.parquet`: 1 riga per titolo/tranche con `isin`, `tipo`,
-`emissione`, `scadenza`, `cedola_pct`, `valuta`, `circolante_riv_eur`,
-`circolante_nom_eur`, `data_ref`. Include titoli esteri (GLOBAL/EMTN), SURE e
-NGEU. Query: `queries/04_profilo_scadenze.sql` (per anno) e
-`queries/05_rollover_12m.sql` (quota in scadenza a 12 mesi).
+## Come funziona
 
-Layer MEF aggiuntivi: `data/build/mef_titoli_12m.parquet` (per mese x tipologia,
-file ufficiale) e `data/build/mef_vita_media.parquet` (serie mensile vita media).
+```
+fetch → normalize → mart → reconcile → signals → scenario → panorama
+```
 
-## Fusion layer (il cuore)
+```bash
+make all            # esegue l'intera pipeline
+make panorama       # genera data/reporting/panorama.md + .json
+python3 test_smoke.py   # verifica l'integrità dei layer
+```
 
-**Stato:** cinque casi attivi — FPI vs Eurostat, FPI vs OCPI, MEF vs FPI,
-MEF titoli-12m vs rollover, fabbisogno vs stock.
+I dati sono scaricati dal web a ogni run e normalizzati in un archivio uniforme
+(`data/mart/`). Il **fusion layer** confronta le fonti tra loro. I **segnali**
+calcolano gli indicatori con soglie esplicite. Gli **scenari** proiettano la
+traiettoria del debito/PIL. Tutto converge nel **panorama**.
 
-Riconciliazione implementata:
-1. **FPI (dicembre, mln EUR)** vs **Eurostat stock MIO_EUR (annuale)** — stesso
-   concetto (debito lordo AP, S13). Delta % con soglia 2%.
-2. **FPI vs OCPI** (serie C "Debito") — stessa definizione Maastricht.
-3. **MEF Tesoro titoli vs FPI titoli AP (F3)** — i titoli di Stato emessi dal
-   Tesoro rispetto a tutti i titoli delle AP.
-4. **MEF "titoli 12m" ufficiale vs rollover ISIN-level** — due file della stessa
-   fonte: verifica del parser + perimetro.
-5. **Fabbisogno AP vs variazione stock** — identità contabile con SFA implicito.
+## Trasparenza e limiti
 
-Esiti:
-- FPI vs Eurostat: **31 anni (1995-2025), 1 anomalia** (1995, -7% — spiegata,
-  divergenza di definizione transitoria all'avvio delle notifiche EDP).
-- FPI vs OCPI: **165 anni (1861-2025), 0 anomalie** — due fonti indipendenti
-  (Banca d'Italia vs OCPI che combina ISTAT/FMI/AMECO) allineate al decimale.
-- MEF vs FPI: **101,1%** (giu-2026) — il Tesoro emette praticamente tutti i titoli
-  delle AP. 244 ISIN in circolazione (detail file scadenze).
-- Titoli-12m ufficiale vs ISIN: **8/12 mesi identici, 4 divergono** (+53 mld —
-  da investigare, probabile disallineamento di valutazione; vedi note).
-- Fabbisogno vs variazione stock: **SFA implicito +19 mld su 36 mesi** — identità
-  contabile rispettata, nessun mese anomalo (>20 mld).
-
-Ogni delta oltre soglia diventa una **anomalia da investigare**, non un errore.
-
-## Limiti
-
-- Il parser MEF è fragile: i file ufficiali del Tesoro cambiano layout. Il formato
-  cella-per-riga permette di recuperare dati anche quando il parser finale richiede fix.
-- Definizioni diverse tra fonti sono legittime: il fusion layer le rende esplicite,
-  non le nasconde.
+- Ogni numero è riconducibile alla fonte: il sistema non inventa nulla, normalizza e confronta.
+- Le fonti ufficiali a volte cambiano layout o definizioni: il sistema lo segnala,
+  non lo nasconde. Le differenze tra fonti possono essere legittime (perimetro,
+  valutazione) — il fusion layer le rende esplicite.
+- Gli scenari sono esercizi di sensibilità, non previsioni.
 
 ## Riferimenti
 
-- `_local/notes/current/NOTE_bankitalia_fpi_2026-07-04.md` — esplorazione FPI precedente
-- Issue dataset-incubator #620 — intake FPI (mai evasa)
-- [NazarenoLecis/Debito_pubblico_italiano](https://github.com/NazarenoLecis/Debito_pubblico_italiano) — pipeline di riferimento
+- [NazarenoLecis/Debito_pubblico_italiano](https://github.com/NazarenoLecis/Debito_pubblico_italiano) — pipeline di riferimento sul parsing FPI
+- Banca d'Italia BDS — [pubblicazione FPI](https://www.bancaditalia.it/statistiche/tematiche/conti-pubblici/dp-pa/)
+- MEF Dipartimento del Tesoro — [dati statistici](https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/)

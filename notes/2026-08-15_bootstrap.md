@@ -2,6 +2,7 @@
 
 Data: 2026-08-15
 Stato: prima sessione — scaffold e primo fetch dati
+Aggiornamento: 2026-08-15 — sistema completo end-to-end, README ripulito per pubblicazione
 
 ## Cosa è stato fatto
 
