@@ -133,6 +133,23 @@ def run():
         print("[ERRORE] nessun record valido in mef_scadenze")
         sys.exit(1)
 
+    # Dedup tranche: il file MEF elenca righe multiple per lo stesso ISIN quando il
+    # titolo ha più tranche (la colonna 'Emissione' riporta il numero tranche, es.
+    # '0,3'). Il circolante della tranche più recente include le precedenti, quindi
+    # si prende il massimo per (isin, scadenza) per evitare double-count.
+    from collections import defaultdict
+    best = {}
+    for r in records:
+        key = (r["isin"], r["scadenza"])
+        if key not in best:
+            best[key] = r
+            continue
+        cur = best[key]
+        for col in ("circolante_riv_eur", "circolante_nom_eur"):
+            if (cur.get(col) is None) or (r.get(col) is not None and r[col] > cur[col]):
+                cur[col] = r.get(col)
+    records = list(best.values())
+
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
     con.execute("""

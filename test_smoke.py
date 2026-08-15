@@ -16,6 +16,7 @@ RECON = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
 RECON_T12 = ROOT / "data" / "reconcile" / "reconcile_titoli12m_vs_isin.csv"
+PANORAMA = ROOT / "data" / "reporting" / "panorama.json"
 
 
 def fail(msg):
@@ -71,6 +72,15 @@ def main():
     if recon_t12 == 0:
         fail("reconcile titoli12m vuoto")
     print(f"[OK] reconcile titoli12m: {recon_t12} mesi confrontati")
+
+    if not PANORAMA.exists():
+        fail(f"panorama mancante: {PANORAMA}")
+    import json
+    with open(PANORAMA, encoding="utf-8") as f:
+        panorama = json.load(f)
+    if not panorama.get("segnali") or not panorama.get("profilo"):
+        fail("panorama senza segnali/profilo")
+    print(f"[OK] panorama: {len(panorama['segnali'])} segnali, {len(panorama['profilo'])} anni profilo")
 
     print("[OK] smoke test superato")
 

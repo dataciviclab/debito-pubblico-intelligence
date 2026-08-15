@@ -1,10 +1,10 @@
 # Debito Pubblico Intelligence — Makefile
-.PHONY: all fetch fpi eurostat ocpi normalize mart reconcile signals clean test
+.PHONY: all fetch fpi eurostat ocpi mef normalize mart reconcile signals panorama test clean
 
-# Pipeline completa: fonti -> normalize -> mart -> segnali
-all: fetch normalize mart reconcile signals test
+# Pipeline completa: fonti -> normalize -> mart -> reconcile -> segnali -> panorama
+all: fetch normalize mart reconcile signals panorama test
 
-# Step 1: scarica le fonti ufficiali (Banca d'Italia FPI, Eurostat, OCPI)
+# Step 1: scarica le fonti ufficiali (Banca d'Italia FPI, Eurostat, OCPI, MEF)
 fetch:
 	python3 pipeline.py --step fetch
 
@@ -15,10 +15,13 @@ eurostat:
 	python3 pipeline.py --step fetch --source eurostat
 ocpi:
 	python3 pipeline.py --step fetch --source ocpi
+mef:
+	python3 pipeline.py --step fetch --source mef
 
 # Step 2: normalizza source-level -> long/tidy
 normalize:
 	python3 pipeline.py --step normalize
+
 # Step 3: mart queryabile (debito per sottosettore/strumento/detentore)
 mart:
 	python3 pipeline.py --step mart
@@ -31,9 +34,13 @@ reconcile:
 signals:
 	python3 pipeline.py --step signals
 
+# Deliverable: panorama in data/reporting/ (md + json)
+panorama:
+	python3 reports/panorama.py
+
 # Test di integrità
 test:
 	python3 test_smoke.py
 
 clean:
-	rm -rf data/raw data/build data/mart data/reconcile data/signals
+	rm -rf data/raw data/build data/mart data/reconcile data/signals data/reporting

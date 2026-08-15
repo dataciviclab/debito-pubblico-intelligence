@@ -83,6 +83,13 @@ Stato: prima sessione — scaffold e primo fetch dati
   valutazione nominale/rivalutato tra i due file MEF.
 - **Signals**: 10 segnali (aggiunti vita media 7,0 anni).
 
+## Layer narrativa (panorama)
+
+- **`reports/panorama.py`** → `data/reporting/panorama.md` + `.json`: aggrega segnali,
+  reconcile e profilo scadenze in un deliverable leggibile. Segue il pattern di
+  opere-pubbliche-intelligence.
+- Il panorama riflette i valori **post-fix dedup tranche** (rollover 363,5 mld = 12,7%).
+
 ## Quadro intelligence (primo quadro completo)
 
 Lo stock di debito è coerente cross-fonte (FPI=Eurostat=OCPI); i titoli Tesoro

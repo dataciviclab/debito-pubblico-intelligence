@@ -36,10 +36,11 @@ fetch -> normalize -> mart -> reconcile -> signals
 ```
 
 ```bash
-make all        # pipeline completa: fetch + normalize + mart + reconcile + signals + test
+make all        # pipeline completa: fetch + normalize + mart + reconcile + signals + panorama + test
 make fpi        # solo download Banca d'Italia FPI
 make mart       # rebuild mart (comando quotidiano)
 make reconcile  # fusion layer
+make panorama   # deliverable: data/reporting/panorama.md + .json
 python3 test_smoke.py  # verifica integrità layer
 ```
 
@@ -50,8 +51,9 @@ python3 test_smoke.py  # verifica integrità layer
 | Raw | `data/raw/fpi_all.csv`, `eurostat_*.csv`, `ocpi_serie_storiche.csv`, `mef_*.csv` | fonti scaricate |
 | Build | `data/build/fpi_long.csv`, `data/build/mef_scadenze.parquet` | source-level normalizzato |
 | Mart | `data/mart/debt_fatti.parquet` | unica fonte per le query debito |
-| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (3 casi) |
+| Reconcile | `data/reconcile/reconcile_*.csv` | delta cross-fonte (4 casi) |
 | Signals | `data/signals/signals.csv` | segnali con soglie |
+| Reporting | `data/reporting/panorama.md` + `.json` | deliverable pubblico |
 
 ## Contratto dati
 
