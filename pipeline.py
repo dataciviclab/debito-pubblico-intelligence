@@ -38,6 +38,8 @@ def main():
         from scripts import mart
         mart.run()
     elif args.step == "reconcile":
+        from scripts import bdap
+        bdap.build_summary()
         from scripts import reconcile
         reconcile.run()
     elif args.step == "signals":

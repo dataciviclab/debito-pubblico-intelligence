@@ -106,6 +106,22 @@ Aggiornamento: 2026-08-15 — sistema completo end-to-end, README ripulito per p
   (+17,8pp) mostrano la fragilità.
 - **Signals**: 12 segnali, **scenario**: 7 ipotesi, **panorama**: sezione 5.
 
+## BDAP Stato — casi reconcile 6 e 7
+
+- **`scripts/bdap.py`**: legge i clean parquet BDAP dal catalogo GCS (via
+  `lab_connectors.gcs.paths.gs_url`), non duplica il fetch. Produce
+  `data/build/bdap_stato_summary.csv` (17 anni, 2008-2024): entrate tributarie,
+  accensione prestiti (Titolo IV), oneri debito, rimborsi, totale spese.
+- **Caso 6 (oneri BDAP vs OCPI)**: oneri del debito a bilancio **+10,6 mld/anno
+  sistematici** vs interessi OCPI (17 anni). Il costo "vero" supera la stima:
+  include voci di gestione. Unica eccezione 2022 (BDAP sotto di 7 mld).
+- **Caso 7 (accensione vs fabbisogno)**: INDICATORE, non identità. Accensione
+  (lordo Stato) ≈ fabbisogno (netto AP) + rimborsi + residuo per riserve di
+  liquidità. Perimetro diverso (Stato vs AP) → delta 30-180 mld attesi.
+- **Avvertimento**: il candidate BDAP locale (smoke) era incompleto (spese solo
+  2008-2011); la versione GCS è completa. Da usare sempre GCS.
+- **Signals**: 12, **reconcile**: 7 casi, **test**: 13 contratti.
+
 ## Quadro intelligence (aggiornato)
 
 - **Spread BTP-Bund**: +0,81 pp (lug-2026) — IT 3,88% vs DE 3,07%.

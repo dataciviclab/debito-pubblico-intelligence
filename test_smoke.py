@@ -17,6 +17,8 @@ RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
 RECON_T12 = ROOT / "data" / "reconcile" / "reconcile_titoli12m_vs_isin.csv"
 RECON_FAB = ROOT / "data" / "reconcile" / "reconcile_fabbisogno_vs_stock.csv"
+RECON_ONERI = ROOT / "data" / "reconcile" / "reconcile_oneri_bdap_vs_ocpi.csv"
+RECON_ACC = ROOT / "data" / "reconcile" / "reconcile_accensione_vs_fabbisogno.csv"
 PANORAMA = ROOT / "data" / "reporting" / "panorama.json"
 SCEN = ROOT / "data" / "scenarios" / "scenarios.json"
 
@@ -98,6 +100,14 @@ def main():
     if not scen.get("scenari"):
         fail("scenari vuoti")
     print(f"[OK] scenari: {len(scen['scenari'])} ipotesi, orizzonte {scen.get('orizzonte_anni')} anni")
+
+    for name, path in [("oneri", RECON_ONERI), ("accensione", RECON_ACC)]:
+        if not path.exists():
+            fail(f"reconcile {name} mancante: {path}")
+        n = con.execute(f"SELECT count(*) FROM read_csv('{path}')").fetchone()[0]
+        if n == 0:
+            fail(f"reconcile {name} vuoto")
+        print(f"[OK] reconcile {name}: {n} anni confrontati")
 
     print("[OK] smoke test superato")
 

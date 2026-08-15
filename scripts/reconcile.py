@@ -30,6 +30,15 @@ Quinto caso: fabbisogno AP (TCCE0125) vs variazione dello stock di debito (S13.M
 Identità contabile: variazione stock = fabbisogno + aggiustamento stock-flussi (SFA).
 Il delta è il SFA implicito — la parte di variazione del debito non spiegata dal
 fabbisogno (es. operazioni fuori bilancio, riallocazioni, effetti di cambio).
+
+Sesto caso: oneri del debito a bilancio (BDAP spese Stato) vs interessi OCPI.
+Il costo "vero" del debito dal bilancio (include gestione) vs la serie interessi.
+
+Settimo caso: accensione prestiti (BDAP entrate Stato, Titolo IV) vs fabbisogno FPI.
+INDICATORE, non identità esatta: l'accensione è il flusso LORDO dello Stato (include
+rifinanziamento + gestione tesoreria), il fabbisogno FPI è il NETTO delle AP. Il
+residuo accensione - (fabbisogno + rimborsi) misura quanto indebitamento lordo va a
+costituire riserve di liquidità. Perimetro: BDAP Stato vs FPI tutte le AP.
 """
 
 import csv
@@ -297,6 +306,82 @@ def run():
                 w.writerow([r["mese"], r["fabbisogno_mln_eur"], r["variazione_stock_mln_eur"],
                             r["sfa_implicito_mln_eur"]])
         print(f"[reconcile] OK {out}")
+
+    # CASO 6+7: BDAP Stato (oneri vs OCPI; accensione prestiti vs fabbisogno FPI)
+    bdap = ROOT / "data" / "build" / "bdap_stato_summary.csv"
+    ocpi = ROOT / "data" / "raw" / "ocpi_serie_storiche.csv"
+    if bdap.exists() and ocpi.exists():
+        import csv as _csv
+
+        print("\n=== CASO 6: oneri debito BDAP vs interessi OCPI ===")
+        # interessi OCPI: serie J = spesa per interessi in mln EUR correnti
+        ocpi_int = {int(r["anno"]): float(r["valore"]) for r in _csv.DictReader(open(ocpi))
+                    if r["serie"] == "J"}
+
+        report6 = []
+        for r in _csv.DictReader(open(bdap)):
+            anno = int(r["anno"])
+            oneri = float(r["oneri_cp"]) / 1e6  # EUR -> mln
+            ocpi_v = ocpi_int.get(anno)
+            if ocpi_v is None:
+                continue
+            delta = oneri - ocpi_v
+            report6.append({
+                "anno": anno,
+                "oneri_bdap_mln_eur": round(oneri, 0),
+                "interessi_ocpi_mln_eur": round(ocpi_v, 0),
+                "delta_mln_eur": round(delta, 0),
+                "delta_pct": round(delta / ocpi_v * 100, 1),
+            })
+        tot6 = sum(r["delta_mln_eur"] for r in report6)
+        print(f"[reconcile] oneri BDAP vs OCPI: {len(report6)} anni, delta medio "
+              f"{tot6/len(report6):+.0f} mln/anno" if report6 else "nessun dato")
+        for r in report6[-3:]:
+            print(f"[reconcile]   {r['anno']}: BDAP {r['oneri_bdap_mln_eur']:,.0f} vs "
+                  f"OCPI {r['interessi_ocpi_mln_eur']:,.0f} (delta {r['delta_mln_eur']:+,.0f})")
+        out6 = RECON_DIR / "reconcile_oneri_bdap_vs_ocpi.csv"
+        with open(out6, "w", encoding="utf-8", newline="") as f:
+            w = _csv.DictWriter(f, fieldnames=["anno", "oneri_bdap_mln_eur", "interessi_ocpi_mln_eur",
+                                               "delta_mln_eur", "delta_pct"])
+            w.writeheader()
+            w.writerows(report6)
+        print(f"[reconcile] OK {out6}")
+
+        print("\n=== CASO 7: accensione prestiti BDAP vs fabbisogno AP FPI ===")
+        # fabbisogno annuale: somma del fabbisogno mensile S13.MGD per anno
+        fab_annual = con.execute("""
+            SELECT cast(strftime(data, '%Y') AS INT) anno, sum(valore_mln_eur) tot
+            FROM read_parquet('data/mart/debt_fatti.parquet')
+            WHERE tavola = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
+            GROUP BY 1 ORDER BY 1
+        """).fetchall()
+        fab_map = {a: v for a, v in fab_annual}
+
+        report7 = []
+        for r in _csv.DictReader(open(bdap)):
+            anno = int(r["anno"])
+            accensione = float(r["accensione_cp"]) / 1e6  # EUR -> mln
+            fab = fab_map.get(anno)
+            if fab is None:
+                continue
+            delta = accensione - fab
+            report7.append({
+                "anno": anno,
+                "accensione_bdap_mln_eur": round(accensione, 0),
+                "fabbisogno_fpi_mln_eur": round(fab, 0),
+                "delta_mln_eur": round(delta, 0),
+            })
+        if report7:
+            last7 = report7[-1]
+            print(f"[reconcile] {last7['anno']}: accensione {last7['accensione_bdap_mln_eur']:,.0f} vs "
+                  f"fabbisogno FPI {last7['fabbisogno_fpi_mln_eur']:,.0f} (delta {last7['delta_mln_eur']:+,.0f})")
+            out7 = RECON_DIR / "reconcile_accensione_vs_fabbisogno.csv"
+            with open(out7, "w", encoding="utf-8", newline="") as f:
+                w = _csv.DictWriter(f, fieldnames=["anno", "accensione_bdap_mln_eur",
+                                                   "fabbisogno_fpi_mln_eur", "delta_mln_eur"])
+                w.writeheader()
+                w.writerows(report7)
+            print(f"[reconcile] OK {out7}")
 
 
 if __name__ == "__main__":

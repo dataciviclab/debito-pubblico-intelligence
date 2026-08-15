@@ -153,6 +153,10 @@ def main():
          "esito": "8/12 mesi identici; delta residuo <1%"},
         {"nome": "Fabbisogno vs variazione stock",
          "esito": "SFA implicito +19 mld su 36 mesi (identità contabile ok)"},
+        {"nome": "Oneri debito BDAP vs interessi OCPI",
+         "esito": "BDAP sistematicamente +10,6 mld/anno (17 anni)"},
+        {"nome": "Accensione prestiti vs fabbisogno",
+         "esito": "indicatore: lordo Stato vs netto AP (perimetro diverso)"},
     ]
 
     payload = {

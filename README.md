@@ -28,6 +28,9 @@ Esempi di cosa il sistema ha già rilevato:
 - **Doppio conteggio trovato e corretto**: il file scadenze del Tesoro elenca ogni
   titolo una volta per tranche; un parser ingenuo li somma due volte. Il fusion layer
   l'ha scovato (~53 mld di differenza) e il parser è stato corretto.
+- **Costo del debito a bilancio**: gli oneri pagati dal bilancio dello Stato (BDAP)
+  superano gli interessi misurati dall'OCPI di ~10,6 mld/anno — la differenza tra
+  costo "vero" e stima, verificata su 17 anni.
 
 ## I segnali (cosa osserviamo)
 
@@ -65,6 +68,7 @@ maggiore. Non previsioni, ma sensibilità: "cosa cambia se...".
 | Eurostat — `irt_lt_mcby_m` | rendimento a lungo termine (10Y), Italia e Germania |
 | OCPI (Università Cattolica) | 26 serie storiche 1861-2025 (debito, PIL, i−g, saldo primario, interessi) |
 | MEF — Dipartimento del Tesoro | composizione e scadenze dei titoli di Stato (ISIN-level), vita media |
+| BDAP Stato (MEF-RGS) | entrate e spese dello Stato per titolo/missione/macroaggregato (via catalogo GCS) |
 
 Tutte le fonti sono pubbliche e verificabili.
 
