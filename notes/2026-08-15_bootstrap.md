@@ -136,6 +136,8 @@ Aggiornamento: 2026-08-15 — sistema completo end-to-end, README ripulito per p
   Il sistema debito lo legge dal mart locale del candidate.
 - **`scripts/bdap.py` → `build_consuntivo()`**: estrae la serie missione "Debito
   pubblico" → `data/build/bdap_consuntivo_debito.csv` (interessi/rimborsi per anno).
+  Ora legge il mart da **GCS** (`lab_connectors.gcs.paths`), con fallback al mart
+  locale del candidate in dataset-incubator (candidate promosso il 2026-08-16).
 - **CASO 6b (consuntivo vs OCPI)**: **delta medio +166 mln/anno su 12 anni** — il
   consuntivo reale conferma la stima OCPI quasi al centesimo (vs caso 6a previsione
   che dava +10,6 mld/anno). Unica anomalia: 2022 (−21,6 mld, cassa vs competenza

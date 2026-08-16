@@ -14,6 +14,7 @@ Usato da reconcile per:
 Output (celle estratte, non layer):
   data/build/bdap_stato_summary.csv   — per anno: trib, accensione, oneri, rimborsi
   data/build/bdap_consuntivo_debito.csv — serie consuntivo missione Debito pubblico
+  (consuntivo letto dal mart di bdap_pagamenti_stato, GCS con fallback locale)
 """
 
 import csv
@@ -93,30 +94,46 @@ def build_summary():
     return out
 
 
+def _consuntivo_file_urls(con):
+    """URL dei mart consuntivo per anno: GCS (candidate promosso) con fallback locale."""
+    from lab_connectors.gcs.paths import gs_url
+
+    urls = []
+    for year in range(2014, 2026):
+        try:
+            url = gs_url("mart", "mart_parquet", slug="bdap_pagamenti_stato", year=year,
+                         table="mart_pagamenti_missione_categoria")
+            n = con.execute(f"SELECT count(*) FROM read_parquet('{url}')").fetchone()[0]
+            if n and n > 0:
+                urls.append(url)
+        except Exception:
+            continue
+    if urls:
+        return urls
+    # fallback: mart locale del candidate (se non ancora promosso)
+    if CANDIDATE_MART.exists():
+        return sorted(str(f) for f in CANDIDATE_MART.glob("*/mart_pagamenti_missione_categoria.parquet"))
+    return []
+
+
 def build_consuntivo():
     """Serie consuntiva della missione 'Debito pubblico' (interessi/rimborsi).
 
-    Legge il mart locale del candidate bdap_pagamenti_stato (2014-2025).
-    Quando il candidate sarà promosso, migrare il path su GCS.
+    Legge il mart del candidate bdap_pagamenti_stato (2014-2025): prima da GCS
+    (candidate promosso), fallback al mart locale del candidate in dataset-incubator.
     """
-    if not CANDIDATE_MART.exists():
-        print("[bdap] consuntivo: mart candidate non presente (skip) — atteso se candidate non runnato")
-        return None
-
     con = duckdb.connect()
-    files = sorted(CANDIDATE_MART.glob("*/mart_pagamenti_missione_categoria.parquet"))
-    if not files:
-        print("[bdap] consuntivo: nessun parquet mart trovato (skip)")
+    file_urls = _consuntivo_file_urls(con)
+    if not file_urls:
+        print("[bdap] consuntivo: nessun mart disponibile (GCS o locale) (skip)")
         return None
 
-    # lista file come stringhe per read_parquet()
-    file_strs = [str(f) for f in files]
     rows = con.execute(f"""
         SELECT esercizio_finanziario AS anno,
                round(sum(CASE WHEN upper(categoria) LIKE '%INTERESSI%' THEN totale_pagato END)/1e6, 1) AS interessi_mln,
                round(sum(CASE WHEN upper(categoria) LIKE '%RIMBORSO%' THEN totale_pagato END)/1e6, 1) AS rimborsi_mln,
                round(sum(totale_pagato)/1e6, 1) AS totale_mln
-        FROM read_parquet({file_strs!r})
+        FROM read_parquet({file_urls!r})
         WHERE upper(missione) LIKE '%DEBITO%'
         GROUP BY 1 ORDER BY 1
     """).fetchall()
