@@ -9,7 +9,7 @@ Le query analitiche vivono in queries/*.sql e leggono da qui.
 import sys
 from pathlib import Path
 
-import duckdb
+from lab_connectors.duckdb.core import safe_connect
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD_DIR = ROOT / "data" / "build"
@@ -23,14 +23,14 @@ def run():
         sys.exit(1)
 
     MART_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect()
-    con.execute(f"CREATE TABLE fpi AS SELECT * FROM read_csv('{src}', delim=';')")
+    with safe_connect() as con:
+        con.execute(f"CREATE TABLE fpi AS SELECT * FROM read_csv('{src}', delim=';')")
 
-    con.execute(f"""
-        COPY (SELECT data, tavola_nome AS tavola, codice, descrizione, valore_mln_eur, fonte
-              FROM fpi) TO '{MART_DIR / "debt_fatti.parquet"}' (FORMAT parquet)
-    """)
-    n = con.execute("SELECT count(*) FROM fpi").fetchone()[0]
+        con.execute(f"""
+            COPY (SELECT data, tavola_nome AS tavola, codice, descrizione, valore_mln_eur, fonte
+                  FROM fpi) TO '{MART_DIR / "debt_fatti.parquet"}' (FORMAT parquet)
+        """)
+        n = con.execute("SELECT count(*) FROM fpi").fetchone()[0]
     print(f"[mart] OK {MART_DIR / 'debt_fatti.parquet'}: {n} righe")
 
 

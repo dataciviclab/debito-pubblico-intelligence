@@ -16,7 +16,7 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-import duckdb
+from lab_connectors.duckdb.core import safe_connect
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
@@ -151,23 +151,23 @@ def run():
     records = list(best.values())
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect()
-    con.execute("""
-        CREATE TABLE scadenze (
-            isin VARCHAR, tipo VARCHAR, emissione DATE, scadenza DATE,
-            cedola_pct DOUBLE, valuta VARCHAR,
-            circolante_riv_eur DOUBLE, circolante_nom_eur DOUBLE, data_ref DATE
+    with safe_connect() as con:
+        con.execute("""
+            CREATE TABLE scadenze (
+                isin VARCHAR, tipo VARCHAR, emissione DATE, scadenza DATE,
+                cedola_pct DOUBLE, valuta VARCHAR,
+                circolante_riv_eur DOUBLE, circolante_nom_eur DOUBLE, data_ref DATE
+            )
+        """)
+        con.executemany(
+            "INSERT INTO scadenze VALUES (?,?,?,?,?,?,?,?,?)",
+            [(r["isin"], r["tipo"], r["emissione"], r["scadenza"], r["cedola_pct"],
+              r["valuta"], r["circolante_riv_eur"], r["circolante_nom_eur"], r["data_ref"])
+             for r in records],
         )
-    """)
-    con.executemany(
-        "INSERT INTO scadenze VALUES (?,?,?,?,?,?,?,?,?)",
-        [(r["isin"], r["tipo"], r["emissione"], r["scadenza"], r["cedola_pct"],
-          r["valuta"], r["circolante_riv_eur"], r["circolante_nom_eur"], r["data_ref"])
-         for r in records],
-    )
-    out = BUILD_DIR / "mef_scadenze.parquet"
-    con.execute(f"COPY scadenze TO '{out}' (FORMAT parquet)")
-    print(f"[normalize] mef scadenze OK {out}: {len(records)} titoli (data_ref {data_ref})")
+        out = BUILD_DIR / "mef_scadenze.parquet"
+        con.execute(f"COPY scadenze TO '{out}' (FORMAT parquet)")
+        print(f"[normalize] mef scadenze OK {out}: {len(records)} titoli (data_ref {data_ref})")
 
     normalize_titoli_12m()
     normalize_vita_media()
@@ -230,13 +230,13 @@ def normalize_titoli_12m():
                             "tipologia": "TOTALE", "valore_mln_eur": tot})
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect()
-    con.execute("CREATE TABLE t12 (mese_scadenza VARCHAR, tipologia VARCHAR, valore_mln_eur DOUBLE)")
-    con.executemany("INSERT INTO t12 VALUES (?,?,?)",
-                    [(r["mese_scadenza"], r["tipologia"], r["valore_mln_eur"]) for r in records])
-    out = BUILD_DIR / "mef_titoli_12m.parquet"
-    con.execute(f"COPY t12 TO '{out}' (FORMAT parquet)")
-    print(f"[normalize] mef titoli_12m OK {out}: {len(records)} celle")
+    with safe_connect() as con:
+        con.execute("CREATE TABLE t12 (mese_scadenza VARCHAR, tipologia VARCHAR, valore_mln_eur DOUBLE)")
+        con.executemany("INSERT INTO t12 VALUES (?,?,?)",
+                        [(r["mese_scadenza"], r["tipologia"], r["valore_mln_eur"]) for r in records])
+        out = BUILD_DIR / "mef_titoli_12m.parquet"
+        con.execute(f"COPY t12 TO '{out}' (FORMAT parquet)")
+        print(f"[normalize] mef titoli_12m OK {out}: {len(records)} celle")
 
 
 def normalize_vita_media():
@@ -283,13 +283,13 @@ def normalize_vita_media():
             })
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect()
-    con.execute("CREATE TABLE vmedia (mese VARCHAR, tipologia VARCHAR, vita_media_mesi DOUBLE)")
-    con.executemany("INSERT INTO vmedia VALUES (?,?,?)",
-                    [(r["mese"], r["tipologia"], r["vita_media_mesi"]) for r in records])
-    out = BUILD_DIR / "mef_vita_media.parquet"
-    con.execute(f"COPY vmedia TO '{out}' (FORMAT parquet)")
-    print(f"[normalize] mef vita_media OK {out}: {len(records)} celle")
+    with safe_connect() as con:
+        con.execute("CREATE TABLE vmedia (mese VARCHAR, tipologia VARCHAR, vita_media_mesi DOUBLE)")
+        con.executemany("INSERT INTO vmedia VALUES (?,?,?)",
+                        [(r["mese"], r["tipologia"], r["vita_media_mesi"]) for r in records])
+        out = BUILD_DIR / "mef_vita_media.parquet"
+        con.execute(f"COPY vmedia TO '{out}' (FORMAT parquet)")
+        print(f"[normalize] mef vita_media OK {out}: {len(records)} celle")
 
 
 if __name__ == "__main__":

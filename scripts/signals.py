@@ -22,7 +22,7 @@ import csv
 import sys
 from pathlib import Path
 
-import duckdb
+from lab_connectors.duckdb.core import safe_connect
 
 ROOT = Path(__file__).resolve().parent.parent
 SIG_DIR = ROOT / "data" / "signals"
@@ -105,24 +105,24 @@ SIGNAL_META = {
 
 def run():
     SIG_DIR.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect()
 
     report = []
-    for name, query in SIGNAL_QUERIES.items():
-        try:
-            val = con.execute(query).fetchone()
-        except Exception as exc:  # fonte opzionale non disponibile
-            print(f"[signals] skip {name}: {exc}")
-            continue
-        if val is None or val[0] is None:
-            continue
-        value = float(val[0])
-        label, cat, soglia = SIGNAL_META[name]
-        report.append({"segnale": name, "descrizione": label, "categoria": cat, "valore": round(value, 3)})
-        msg = f"[signals] {label}: {value:.3f}"
-        if soglia:
-            msg += f"  ({soglia})"
-        print(msg)
+    with safe_connect() as con:
+        for name, query in SIGNAL_QUERIES.items():
+            try:
+                val = con.execute(query).fetchone()
+            except Exception as exc:  # fonte opzionale non disponibile
+                print(f"[signals] skip {name}: {exc}")
+                continue
+            if val is None or val[0] is None:
+                continue
+            value = float(val[0])
+            label, cat, soglia = SIGNAL_META[name]
+            report.append({"segnale": name, "descrizione": label, "categoria": cat, "valore": round(value, 3)})
+            msg = f"[signals] {label}: {value:.3f}"
+            if soglia:
+                msg += f"  ({soglia})"
+            print(msg)
 
     out = SIG_DIR / "signals.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:

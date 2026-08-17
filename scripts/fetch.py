@@ -18,7 +18,8 @@ import re
 import sys
 import zipfile
 from pathlib import Path
-from urllib.request import Request, urlopen
+
+from lab_connectors.http import download
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
@@ -53,9 +54,7 @@ def _download(url, path):
     if path.exists():
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    req = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(req) as resp:
-        path.write_bytes(resp.read())
+    path.write_bytes(download(url, user_agent=USER_AGENT, timeout=120))
 
 
 def _read_legend(zip_bytes):
@@ -205,9 +204,8 @@ def _eurostat_series(payload):
 def _eurostat_get(dataset, params):
     url = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}"
     qs = "&".join(f"{k}={v}" for k, v in params.items())
-    req = Request(f"{url}?{qs}", headers={"User-Agent": USER_AGENT})
-    with urlopen(req) as resp:
-        return json.load(resp)
+    data = download(f"{url}?{qs}", user_agent=USER_AGENT, timeout=60)
+    return json.loads(data)
 
 
 def fetch_eurostat():
@@ -293,9 +291,7 @@ def fetch_ocpi():
     if not out.exists():
         page = "https://osservatoriocpi.unicatt.it/ocpi-servizi-serie-storiche"
         print(f"[ocpi] cerco link su {page} ...")
-        req = Request(page, headers={"User-Agent": "Mozilla/5.0"})
-        with urlopen(req, timeout=30) as resp:
-            html = resp.read().decode("utf-8", "ignore")
+        html = download(page, user_agent="Mozilla/5.0", timeout=30).decode("utf-8", "ignore")
         links = re.findall(r'href=["\']([^"\']*\.(?:xlsx|xls))["\']', html, re.I)
         if not links:
             print("[ERRORE] ocpi: nessun link .xlsx trovato")
@@ -311,10 +307,8 @@ def fetch_ocpi():
         else:
             url = "https://osservatoriocpi.unicatt.it/" + href
         print(f"[ocpi] download {url} ...")
-        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
         RAW_DIR.mkdir(parents=True, exist_ok=True)
-        with urlopen(req, timeout=120) as resp:
-            out.write_bytes(resp.read())
+        out.write_bytes(download(url, user_agent="Mozilla/5.0", timeout=120))
         print(f"[ocpi] scaricato {out} ({out.stat().st_size} bytes)")
     else:
         print(f"[ocpi] xlsx già presente: {out}")
@@ -359,9 +353,7 @@ def fetch_ocpi():
 def _mef_csv_links(page_path, suffix_pat):
     """Estrae link a CSV da una pagina MEF del portale dt.mef.gov.it."""
     url = f"https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/{page_path}/"
-    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urlopen(req, timeout=30) as resp:
-        html = resp.read().decode("utf-8", "ignore")
+    html = download(url, user_agent="Mozilla/5.0", timeout=30).decode("utf-8", "ignore")
     links = sorted(set(l for l in re.findall(r'href=["\']([^"\']*\.csv)["\']', html, re.I)))
     return links
 
@@ -412,9 +404,7 @@ def _download_mef_csv(page_path, out_name):
     out = RAW_DIR / out_name
     url = "https://www.dt.mef.gov.it" + best
     print(f"[mef] download {best} ...")
-    req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urlopen(req, timeout=120) as resp:
-        out.write_bytes(resp.read())
+    out.write_bytes(download(url, user_agent="Mozilla/5.0", timeout=120))
     print(f"[mef] OK {out} ({out.stat().st_size} bytes)")
     return out
 
