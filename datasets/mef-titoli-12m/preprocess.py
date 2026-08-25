@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Preprocess MEF Titoli in scadenza 12 mesi. Usage: python preprocess.py raw_input.csv"""
 import csv
 import sys

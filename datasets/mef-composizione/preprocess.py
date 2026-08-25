@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Preprocess MEF Composizione Titoli Stato. Usage: python preprocess.py raw_input.csv"""
 import csv
 import sys

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Preprocess FPI - Banca d'Italia BDS Finanza Pubblica.
 

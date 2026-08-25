@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Preprocess MEF Vita Media Ponderata. Usage: python preprocess.py raw_input.csv"""
 import csv
 import sys
