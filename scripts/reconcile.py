@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Step reconcile: fusion layer — riconciliazione cross-fonte.
 

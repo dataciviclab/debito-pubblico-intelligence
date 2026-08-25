@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Step signals: segnali con soglie calibrate sullo storico."""
 
 import csv
