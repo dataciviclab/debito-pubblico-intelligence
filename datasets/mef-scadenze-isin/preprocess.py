@@ -14,14 +14,13 @@ Fonte: https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/scadenze_tit
 """
 
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 # Add parent dir for shared imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "_shared"))
-from mef_common import download_latest_csv, parse_amount, parse_date, read_mef_csv
-
 import csv
+
+from mef_common import download_latest_csv, parse_amount, parse_date, read_mef_csv
 
 
 def main():
@@ -51,7 +50,6 @@ def main():
                 import re
                 m = re.search(r"(\d{1,2})\s+\w+\s+(\d{4})", str(cell))
                 if m:
-                    from datetime import date
                     months = {"gennaio":1,"febbraio":2,"marzo":3,"aprile":4,
                               "maggio":5,"giugno":6,"luglio":7,"agosto":8,
                               "settembre":9,"ottobre":10,"novembre":11,"dicembre":12}

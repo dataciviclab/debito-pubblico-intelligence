@@ -29,8 +29,6 @@ jobs:
         with:
           extra-packages: -e ".[pipeline]"
 
-      - name: Install openpyxl
-        run: pip install openpyxl
 
       - name: Run datasets
         env:
@@ -61,7 +59,7 @@ jobs:
             slug=$(basename "$slug_dir")
             year=$(ls "$slug_dir" 2>/dev/null | sort -rn | head -1)
             [ -z "$year" ] && echo "No clean output for $slug" && continue
-            gsutil -m rsync -r "${slug_dir}${year}/" "gs://dataciviclab-clean/dpi/$slug/"
+            gsutil -m rsync -r "${slug_dir}${year}/" "gs://dataciviclab-clean/debito_pubblico_intelligence/$slug/"
             echo "$slug clean synced"
           done
           for slug_dir in out/data/mart/*/; do
@@ -69,7 +67,7 @@ jobs:
             slug=$(basename "$slug_dir")
             year=$(ls "$slug_dir" 2>/dev/null | sort -rn | head -1)
             [ -z "$year" ] && echo "No mart output for $slug" && continue
-            gsutil -m rsync -r "${slug_dir}${year}/" "gs://dataciviclab-mart/dpi/$slug/"
+            gsutil -m rsync -r "${slug_dir}${year}/" "gs://dataciviclab-mart/debito_pubblico_intelligence/$slug/"
             echo "$slug mart synced"
           done
 

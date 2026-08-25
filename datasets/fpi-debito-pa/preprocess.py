@@ -143,7 +143,7 @@ def main():
                 legend[f"{geo}.{strumento}"] = f"Amm. locali ({label}): debito lordo"
 
     all_rows = []
-    for code in ALL_TABLES:
+    for code, table_name in ALL_TABLES.items():
         member = f"{code}_IT.zip"
         if member not in data_zip.namelist():
             print(f"[fpi] skip {code}: non presente nel ZIP")
@@ -154,7 +154,7 @@ def main():
                 continue
             rows = _wide_to_long(tz.read(csvs[0]), code, legend)
             all_rows.extend(rows)
-            print(f"[fpi] {code} ({ALL_TABLES[code]}): {len(rows)} righe")
+            print(f"[fpi] {code} ({table_name}): {len(rows)} righe")
 
     if not all_rows:
         print("[ERRORE] fpi: nessuna riga prodotta")

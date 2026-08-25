@@ -69,7 +69,7 @@ def main():
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         w.writerows(series_rows)
-    n = len(set(r["serie"] for r in series_rows))
+    n = len({r["serie"] for r in series_rows})
     print(f"[ocpi] OK {output}: {len(series_rows)} celle, {n} serie")
 
 

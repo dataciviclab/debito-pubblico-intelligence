@@ -2,14 +2,21 @@
 """Step signals: segnali con soglie calibrate sullo storico."""
 
 import csv
-import duckdb
+import sys
 from pathlib import Path
 
-import sys
+import duckdb
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from datasets._shared.paths import (
-    MART_EUROSTAT_DP, MART_EUROSTAT_R10, MART_FPI_AP, MART_FPI_DET,
-    MART_MEF_SCAD, MART_MEF_VM, MART_OCPI, SIG_DIR,
+    MART_EUROSTAT_DP,
+    MART_EUROSTAT_R10,
+    MART_FPI_AP,
+    MART_FPI_DET,
+    MART_MEF_SCAD,
+    MART_MEF_VM,
+    MART_OCPI,
+    SIG_DIR,
 )
 
 # Path stringhe per le query SQL

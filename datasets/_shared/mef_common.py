@@ -22,8 +22,8 @@ def mef_csv_links(page_path: str) -> list[str]:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=30) as resp:
         html = resp.read().decode("utf-8", "ignore")
-    pat = re.compile(r'href="([^"]*\.csv)"', re.I)
-    return sorted(set(m.group(1) for m in pat.finditer(html)))
+    pat = re.compile(r'href="([^"]*\.csv)"', re.IGNORECASE)
+    return sorted({m.group(1) for m in pat.finditer(html)})
 
 
 def file_date(base: str):
@@ -91,7 +91,7 @@ def parse_date(s: str):
         return None
     for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(s, fmt).date()
+            return datetime.strptime(s, fmt).date()  # noqa: DTZ007
         except ValueError:
             continue
     return None
