@@ -1,13 +1,12 @@
-# Dati legacy — mai in git
+# Dati — mai in git (CI committa con git add -f)
 data/
-# Dati toolkit — mai in git
 out/
 
-# File binari
-*.csv
-*.zip
-*.parquet
-*.xlsx
+# File binari solo alla root
+/*.csv
+/*.zip
+/*.parquet
+/*.xlsx
 
 # Python
 __pycache__/
@@ -21,3 +20,6 @@ __pycache__/
 dist/
 build/
 batch.txt
+
+# Toolkit output nelle cartelle dataset
+datasets/*/raw_input.csv
