@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Step scenario: traiettorie del debito/PIL.
 
@@ -20,7 +19,6 @@ Output: data/scenarios/scenarios.json + summary a terminale.
 
 import csv
 import json
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

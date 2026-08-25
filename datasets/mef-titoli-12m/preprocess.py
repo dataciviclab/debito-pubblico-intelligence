@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
 """Preprocess MEF Titoli in scadenza 12 mesi. Usage: python preprocess.py raw_input.csv"""
-import sys, csv
+import csv
+import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "_shared"))
 from mef_common import download_latest_csv, parse_amount, read_mef_csv
 

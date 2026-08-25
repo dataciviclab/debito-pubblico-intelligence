@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Step reconcile: fusion layer — riconciliazione cross-fonte.
 
@@ -49,16 +48,19 @@ costituire riserve di liquidità. Perimetro: BDAP Stato vs FPI tutte le AP.
 """
 
 import csv
-import io
 import sys
 from pathlib import Path
 
 import duckdb
-import sys
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from datasets._shared.paths import (
-    MART_FPI_AP, MART_FPI_FAB, MART_EUROSTAT_DP, MART_OCPI,
-    MART_MEF_SCAD, MART_MEF_T12, MART_MEF_COMP, RECON_DIR,
+    MART_FPI_AP,
+    MART_FPI_FAB,
+    MART_MEF_COMP,
+    MART_MEF_SCAD,
+    MART_OCPI,
+    RECON_DIR,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -117,7 +119,7 @@ def run():
     if not MART_FPI_AP.exists():
         print(f"[ERRORE] mart FPI mancante: {MART_FPI_AP}")
         sys.exit(1)
-    ocpi_path = str(MART_OCPI)
+    str(MART_OCPI)
 
     RECON_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
@@ -179,7 +181,7 @@ def run():
                         round(ratio, 2) if ratio else None])
         print(f"[reconcile] OK {out}")
 
-        n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{str(MART_MEF_SCAD)}')").fetchall()
+        n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{MART_MEF_SCAD!s}')").fetchall()
         n_isin = n_isin_rows[0][0] if n_isin_rows else 0
         print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione")
     else:
@@ -319,7 +321,7 @@ def run():
         ocpi_int = {int(r[0]): float(r[1]) for r in ocpi_rows}
 
         report6 = []
-        for r in _csv.DictReader(open(bdap)):
+        for r in _csv.DictReader(open(bdap)):  # noqa: SIM115
             anno = int(r["anno"])
             oneri = float(r["oneri_cp"]) / 1e6  # EUR -> mln
             ocpi_v = ocpi_int.get(anno)
@@ -352,7 +354,7 @@ def run():
         if consuntivo.exists():
             print("\n=== CASO 6b: consuntivo interessi (pagati) vs OCPI ===")
             report6b = []
-            for r in _csv.DictReader(open(consuntivo)):
+            for r in _csv.DictReader(open(consuntivo)):  # noqa: SIM115
                 anno = int(r["anno"])
                 cons = float(r["interessi_mln"])
                 ocpi_v = ocpi_int.get(anno)
@@ -385,14 +387,14 @@ def run():
         # fabbisogno annuale: somma del fabbisogno mensile S13.MGD per anno
         fab_annual = con.execute(f"""
             SELECT cast(strftime(data, '%Y') AS INT) anno, sum(valore_mln_eur) tot
-            FROM read_parquet('{str(MART_FPI_FAB)}')
+            FROM read_parquet('{MART_FPI_FAB!s}')
             WHERE tavola_nome = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
             GROUP BY 1 ORDER BY 1
         """).fetchall()
         fab_map = {a: v for a, v in fab_annual}
 
         report7 = []
-        for r in _csv.DictReader(open(bdap)):
+        for r in _csv.DictReader(open(bdap)):  # noqa: SIM115
             anno = int(r["anno"])
             accensione = float(r["accensione_cp"]) / 1e6  # EUR -> mln
             fab = fab_map.get(anno)

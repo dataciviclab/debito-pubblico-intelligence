@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Report panorama — deliverable pubblico del debito pubblico italiano.
 
@@ -10,7 +9,6 @@ Uso: python reports/panorama.py  (o make panorama)
 """
 
 import csv
-import io
 import json
 import sys
 from datetime import date
@@ -182,7 +180,8 @@ def main():
     cons_path = DATA / "build" / "bdap_consuntivo_debito.csv"
     if cons_path.exists():
         import csv as _csv
-        cons_rows = list(_csv.DictReader(open(cons_path)))
+        with open(cons_path) as _f:
+            cons_rows = list(_csv.DictReader(_f))
         if cons_rows:
             last_cons = cons_rows[-1]
             payload["consuntivo_interessi_mld"] = round(float(last_cons["interessi_mln"]) / 1e3, 1)
