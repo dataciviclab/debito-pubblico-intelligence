@@ -36,7 +36,6 @@ jobs:
         run: make run-all
 
       - name: BDAP
-        continue-on-error: true
         run: make bdap
 
       - name: Signals + reconcile + panorama
