@@ -1,0 +1,269 @@
+{
+  "data": "2026-08-25",
+  "segnali": {
+    "debito_totale_ap_mln_eur": 3207247.3,
+    "debito_totale_ap_mm_pct": 0.823,
+    "rendimento_10y_pct": 3.881,
+    "debito_pil_pct": 137.1,
+    "i_g_pp": 0.348,
+    "saldo_primario_pil_pct": 0.7,
+    "spesa_interessi_pil_pct": 3.8,
+    "rollover_12m_pct": 12.7,
+    "rollover_12m_mld_eur": 363.5,
+    "vita_media_anni": 7.0,
+    "spread_btp_bund_pp": 0.81,
+    "quota_banca_italia_pct": 16.7
+  },
+  "reconcile": [
+    {
+      "nome": "FPI vs Eurostat (31 anni)",
+      "esito": "1 anomalia (1995, spiegata)"
+    },
+    {
+      "nome": "FPI vs OCPI (165 anni)",
+      "esito": "0 anomalie (allineate al decimale)"
+    },
+    {
+      "nome": "MEF titoli vs FPI titoli",
+      "esito": "101,1% — Tesoro emette quasi tutti i titoli AP"
+    },
+    {
+      "nome": "MEF titoli-12m vs rollover ISIN",
+      "esito": "8/12 mesi identici; delta residuo <1%"
+    },
+    {
+      "nome": "Fabbisogno vs variazione stock",
+      "esito": "SFA implicito +19 mld su 36 mesi (identità contabile ok)"
+    },
+    {
+      "nome": "Oneri debito BDAP vs interessi OCPI",
+      "esito": "BDAP sistematicamente +10,6 mld/anno (previsione vs stima)"
+    },
+    {
+      "nome": "Consuntivo interessi vs OCPI",
+      "esito": "delta medio +0,2 mld/anno (12 anni) — consuntivo conferma OCPI"
+    },
+    {
+      "nome": "Accensione prestiti vs fabbisogno",
+      "esito": "indicatore: lordo Stato vs netto AP (perimetro diverso)"
+    }
+  ],
+  "profilo": [
+    {
+      "anno": 2026,
+      "mln_eur": 170469.0
+    },
+    {
+      "anno": 2027,
+      "mln_eur": 321920.0
+    },
+    {
+      "anno": 2028,
+      "mln_eur": 264379.0
+    },
+    {
+      "anno": 2029,
+      "mln_eur": 250846.0
+    },
+    {
+      "anno": 2030,
+      "mln_eur": 253735.0
+    },
+    {
+      "anno": 2031,
+      "mln_eur": 242779.0
+    },
+    {
+      "anno": 2032,
+      "mln_eur": 184976.0
+    },
+    {
+      "anno": 2033,
+      "mln_eur": 190627.0
+    },
+    {
+      "anno": 2034,
+      "mln_eur": 87216.0
+    },
+    {
+      "anno": 2035,
+      "mln_eur": 140449.0
+    },
+    {
+      "anno": 2036,
+      "mln_eur": 113843.0
+    },
+    {
+      "anno": 2037,
+      "mln_eur": 80869.0
+    },
+    {
+      "anno": 2038,
+      "mln_eur": 41340.0
+    },
+    {
+      "anno": 2039,
+      "mln_eur": 62903.0
+    },
+    {
+      "anno": 2040,
+      "mln_eur": 66911.0
+    },
+    {
+      "anno": 2041,
+      "mln_eur": 57451.0
+    },
+    {
+      "anno": 2042,
+      "mln_eur": 5494.0
+    },
+    {
+      "anno": 2043,
+      "mln_eur": 20464.0
+    },
+    {
+      "anno": 2044,
+      "mln_eur": 25997.0
+    },
+    {
+      "anno": 2045,
+      "mln_eur": 20614.0
+    },
+    {
+      "anno": 2046,
+      "mln_eur": 41405.0
+    },
+    {
+      "anno": 2047,
+      "mln_eur": 24005.0
+    },
+    {
+      "anno": 2048,
+      "mln_eur": 26546.0
+    },
+    {
+      "anno": 2049,
+      "mln_eur": 25653.0
+    },
+    {
+      "anno": 2050,
+      "mln_eur": 25498.0
+    },
+    {
+      "anno": 2051,
+      "mln_eur": 31568.0
+    },
+    {
+      "anno": 2052,
+      "mln_eur": 14569.0
+    },
+    {
+      "anno": 2053,
+      "mln_eur": 18367.0
+    },
+    {
+      "anno": 2054,
+      "mln_eur": 18689.0
+    },
+    {
+      "anno": 2055,
+      "mln_eur": 15211.0
+    },
+    {
+      "anno": 2056,
+      "mln_eur": 5822.0
+    },
+    {
+      "anno": 2057,
+      "mln_eur": 1000.0
+    },
+    {
+      "anno": 2058,
+      "mln_eur": 500.0
+    },
+    {
+      "anno": 2060,
+      "mln_eur": 250.0
+    },
+    {
+      "anno": 2062,
+      "mln_eur": 250.0
+    },
+    {
+      "anno": 2063,
+      "mln_eur": 500.0
+    },
+    {
+      "anno": 2067,
+      "mln_eur": 10633.0
+    },
+    {
+      "anno": 2072,
+      "mln_eur": 8650.0
+    }
+  ],
+  "top_isin": [
+    {
+      "isin": "IT0003934657",
+      "tipo": "BTP 30",
+      "scadenza": "2037-02-01",
+      "mln_eur": 34219.0
+    },
+    {
+      "isin": "IT0001444378",
+      "tipo": "BTP 30",
+      "scadenza": "2031-05-01",
+      "mln_eur": 32255.0
+    },
+    {
+      "isin": "IT0001278511",
+      "tipo": "BTP 30",
+      "scadenza": "2029-11-01",
+      "mln_eur": 30820.0
+    },
+    {
+      "isin": "IT0005024234",
+      "tipo": "BTP 15",
+      "scadenza": "2030-03-01",
+      "mln_eur": 30206.0
+    },
+    {
+      "isin": "IT0003535157",
+      "tipo": "BTP 30",
+      "scadenza": "2034-08-01",
+      "mln_eur": 29291.0
+    },
+    {
+      "isin": "IT0001174611",
+      "tipo": "BTP 30",
+      "scadenza": "2027-11-01",
+      "mln_eur": 27763.0
+    },
+    {
+      "isin": "IT0005094088",
+      "tipo": "BTP 15",
+      "scadenza": "2032-03-01",
+      "mln_eur": 27452.0
+    },
+    {
+      "isin": "IT0004286966",
+      "tipo": "BTP 30",
+      "scadenza": "2039-08-01",
+      "mln_eur": 26589.0
+    },
+    {
+      "isin": "IT0004889033",
+      "tipo": "BTP 15",
+      "scadenza": "2028-09-01",
+      "mln_eur": 26576.0
+    },
+    {
+      "isin": "IT0003256820",
+      "tipo": "BTP 30",
+      "scadenza": "2033-02-01",
+      "mln_eur": 26261.0
+    }
+  ],
+  "scenari": [],
+  "consuntivo_interessi_mld": 90.1
+}

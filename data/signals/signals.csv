@@ -1,0 +1,13 @@
+segnale,descrizione,categoria,valore
+debito_totale_ap_mln_eur,debito totale AP (mln EUR),debito,3207247.3
+debito_totale_ap_mm_pct,variazione debito m/m (%),debito,0.823
+rendimento_10y_pct,rendimento 10Y (%),costo,3.881
+debito_pil_pct,debito/PIL (%),sostenibilita,137.1
+i_g_pp,i-g (pp),sostenibilita,0.348
+saldo_primario_pil_pct,saldo primario (% PIL),sostenibilita,0.7
+spesa_interessi_pil_pct,spesa interessi (% PIL),sostenibilita,3.8
+rollover_12m_pct,debito in scadenza prossimi 12m (%),rischio,12.7
+rollover_12m_mld_eur,debito in scadenza prossimi 12m (mld EUR),rischio,363.5
+vita_media_anni,vita media residua titoli (anni),rischio,7.0
+spread_btp_bund_pp,spread BTP-Bund 10Y (pp),costo,0.81
+quota_banca_italia_pct,debito AP detenuto da Bd'Italia (%),detentori,16.7

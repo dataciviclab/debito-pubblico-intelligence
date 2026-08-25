@@ -1,0 +1,911 @@
+{
+  "schema_version": 1,
+  "repo": "debito-pubblico-intelligence",
+  "source_repo": "dataciviclab/debito-pubblico-intelligence",
+  "updated_at": "2026-08-25",
+  "datasets": [
+    {
+      "slug": "eurostat_debito_pil",
+      "name": "Eurostat Debito Pil",
+      "description": "",
+      "source": "",
+      "source_id": "eurostat",
+      "period": {
+        "start": 1995,
+        "end": 2025
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "pil",
+        "eurostat",
+        "maastricht"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "anno",
+          "type": "INTEGER",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "year"
+        },
+        {
+          "name": "settore",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "debito_pil_pct",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "stock_mln_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_debito_pil/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "eurostat_debito_pil__mart_debito_pil"
+      ]
+    },
+    {
+      "slug": "eurostat_rendimento_10y",
+      "name": "Eurostat Rendimento 10Y",
+      "description": "",
+      "source": "",
+      "source_id": "eurostat",
+      "period": {
+        "start": 1980,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "rendimento",
+        "titoli",
+        "eurostat",
+        "spread",
+        "btp-bund"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "mese",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "month"
+        },
+        {
+          "name": "paese",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "country_code"
+        },
+        {
+          "name": "rendimento_pct",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_rendimento_10y/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "eurostat_rendimento_10y__mart_rendimento_10y"
+      ]
+    },
+    {
+      "slug": "fpi_debito_pa",
+      "name": "Fpi Debito Pa",
+      "description": "",
+      "source": "",
+      "source_id": "banca_ditalia",
+      "period": {
+        "start": 1960,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "fpi",
+        "banca-ditalia",
+        "amministrazioni-pubbliche"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "data",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tavola",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tavola_nome",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "codice",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "descrizione",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "valore_mln_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "fonte",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/fpi_debito_pa/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "fpi_debito_pa__mart_debito_ap",
+        "fpi_debito_pa__mart_fabbisogno",
+        "fpi_debito_pa__mart_detentori",
+        "fpi_debito_pa__mart_variazione_mensile"
+      ]
+    },
+    {
+      "slug": "mef_composizione",
+      "name": "Mef Composizione",
+      "description": "",
+      "source": "",
+      "source_id": "mef_tesoro",
+      "period": {
+        "start": 2026,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "titoli",
+        "composizione",
+        "mef"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "tipologia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "colonna",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "valore_mln_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_composizione/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "mef_composizione__mart_composizione"
+      ]
+    },
+    {
+      "slug": "mef_scadenze_isin",
+      "name": "Mef Scadenze Isin",
+      "description": "",
+      "source": "",
+      "source_id": "mef_tesoro",
+      "period": {
+        "start": 2026,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "titoli",
+        "scadenze",
+        "isin",
+        "mef"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "isin",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tipo",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "emissione",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "scadenza",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "cedola_pct",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "valuta",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "circolante_riv_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "circolante_nom_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "data_ref",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_scadenze_isin/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "mef_scadenze_isin__mart_scadenze_isin",
+        "mef_scadenze_isin__mart_rollover_12m"
+      ]
+    },
+    {
+      "slug": "mef_titoli_12m",
+      "name": "Mef Titoli 12M",
+      "description": "",
+      "source": "",
+      "source_id": "mef_tesoro",
+      "period": {
+        "start": 2026,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "titoli",
+        "scadenza",
+        "rollover",
+        "mef"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "mese_scadenza",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tipologia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "valore_mln_eur",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_titoli_12m/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "mef_titoli_12m__mart_titoli_12m"
+      ]
+    },
+    {
+      "slug": "mef_vita_media",
+      "name": "Mef Vita Media",
+      "description": "",
+      "source": "",
+      "source_id": "mef_tesoro",
+      "period": {
+        "start": 2026,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "titoli",
+        "vita-media",
+        "mef"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "mese",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "month"
+        },
+        {
+          "name": "tipologia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "vita_media_mesi",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_vita_media/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "mef_vita_media__mart_vita_media"
+      ]
+    },
+    {
+      "slug": "ocpi_serie_storiche",
+      "name": "Ocpi Serie Storiche",
+      "description": "",
+      "source": "",
+      "source_id": "ocpi",
+      "period": {
+        "start": 1861,
+        "end": 2025
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "pil",
+        "i-g",
+        "saldo-primario",
+        "ocpi",
+        "serie-storiche"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "serie",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "nome",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "unita",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "anno",
+          "type": "INTEGER",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "year"
+        },
+        {
+          "name": "valore",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/ocpi_serie_storiche/",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "ocpi_serie_storiche__mart_serie_storiche"
+      ]
+    }
+  ],
+  "marts": [
+    {
+      "slug": "eurostat_debito_pil__mart_debito_pil",
+      "dataset": "eurostat_debito_pil",
+      "table": "mart_debito_pil",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_debito_pil/mart_debito_pil.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "eurostat_rendimento_10y__mart_rendimento_10y",
+      "dataset": "eurostat_rendimento_10y",
+      "table": "mart_rendimento_10y",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_rendimento_10y/mart_rendimento_10y.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "fpi_debito_pa__mart_debito_ap",
+      "dataset": "fpi_debito_pa",
+      "table": "mart_debito_ap",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_debito_ap.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "fpi_debito_pa__mart_detentori",
+      "dataset": "fpi_debito_pa",
+      "table": "mart_detentori",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_detentori.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "fpi_debito_pa__mart_fabbisogno",
+      "dataset": "fpi_debito_pa",
+      "table": "mart_fabbisogno",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_fabbisogno.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "fpi_debito_pa__mart_variazione_mensile",
+      "dataset": "fpi_debito_pa",
+      "table": "mart_variazione_mensile",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_variazione_mensile.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_composizione__mart_composizione",
+      "dataset": "mef_composizione",
+      "table": "mart_composizione",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_composizione/mart_composizione.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_scadenze_isin__mart_rollover_12m",
+      "dataset": "mef_scadenze_isin",
+      "table": "mart_rollover_12m",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/mart_rollover_12m.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_scadenze_isin__mart_scadenze_isin",
+      "dataset": "mef_scadenze_isin",
+      "table": "mart_scadenze_isin",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/mart_scadenze_isin.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_titoli_12m__mart_titoli_12m",
+      "dataset": "mef_titoli_12m",
+      "table": "mart_titoli_12m",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_titoli_12m/mart_titoli_12m.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_vita_media__mart_vita_media",
+      "dataset": "mef_vita_media",
+      "table": "mart_vita_media",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_vita_media/mart_vita_media.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "ocpi_serie_storiche__mart_serie_storiche",
+      "dataset": "ocpi_serie_storiche",
+      "table": "mart_serie_storiche",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/ocpi_serie_storiche/mart_serie_storiche.parquet",
+        "multi_file": false
+      }
+    }
+  ],
+  "signals": [
+    {
+      "id": "eurostat_debito_pil",
+      "source_id": "eurostat",
+      "status": "ok",
+      "label": "eurostat_debito_pil",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122221Z_34d936cd",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 248,
+          "clean": 124,
+          "mart": 124
+        },
+        "output_bytes": {
+          "raw": 8683,
+          "clean": 1763,
+          "mart": 1789
+        },
+        "started_at": "2026-08-25T12:22:21.438045+00:00",
+        "finished_at": "2026-08-25T12:22:22.496194+00:00",
+        "duration_seconds": 1.058
+      }
+    },
+    {
+      "id": "eurostat_rendimento_10y",
+      "source_id": "eurostat",
+      "status": "ok",
+      "label": "eurostat_rendimento_10y",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122222Z_3984fc31",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 16770,
+          "clean": 11945,
+          "mart": 11945
+        },
+        "output_bytes": {
+          "raw": 392241,
+          "clean": 30814,
+          "mart": 30814
+        },
+        "started_at": "2026-08-25T12:22:22.549012+00:00",
+        "finished_at": "2026-08-25T12:22:24.421794+00:00",
+        "duration_seconds": 1.873
+      }
+    },
+    {
+      "id": "fpi_debito_pa",
+      "source_id": "banca_ditalia",
+      "status": "ok",
+      "label": "fpi_debito_pa",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122224Z_3f2f5b47",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 115182,
+          "clean": 115182,
+          "mart": 75701
+        },
+        "output_bytes": {
+          "raw": 16756537,
+          "clean": 319054,
+          "mart": 231611
+        },
+        "started_at": "2026-08-25T12:22:24.478151+00:00",
+        "finished_at": "2026-08-25T12:22:27.879324+00:00",
+        "duration_seconds": 3.401
+      }
+    },
+    {
+      "id": "mef_composizione",
+      "source_id": "mef_tesoro",
+      "status": "ok",
+      "label": "mef_composizione",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122227Z_5a5c8f43",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 15,
+          "clean": 15,
+          "mart": 15
+        },
+        "output_bytes": {
+          "raw": 561,
+          "clean": 969,
+          "mart": 964
+        },
+        "started_at": "2026-08-25T12:22:27.960363+00:00",
+        "finished_at": "2026-08-25T12:22:30.662108+00:00",
+        "duration_seconds": 2.702
+      }
+    },
+    {
+      "id": "mef_scadenze_isin",
+      "source_id": "mef_tesoro",
+      "status": "ok",
+      "label": "mef_scadenze_isin",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122230Z_ed27db54",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 464,
+          "clean": 464,
+          "mart": 502
+        },
+        "output_bytes": {
+          "raw": 43138,
+          "clean": 10056,
+          "mart": 11634
+        },
+        "started_at": "2026-08-25T12:22:30.711791+00:00",
+        "finished_at": "2026-08-25T12:22:33.940887+00:00",
+        "duration_seconds": 3.229
+      }
+    },
+    {
+      "id": "mef_titoli_12m",
+      "source_id": "mef_tesoro",
+      "status": "ok",
+      "label": "mef_titoli_12m",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122234Z_8333d6c1",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 84,
+          "clean": 84,
+          "mart": 84
+        },
+        "output_bytes": {
+          "raw": 2020,
+          "clean": 1076,
+          "mart": 1089
+        },
+        "started_at": "2026-08-25T12:22:34.002426+00:00",
+        "finished_at": "2026-08-25T12:22:36.100003+00:00",
+        "duration_seconds": 2.098
+      }
+    },
+    {
+      "id": "mef_vita_media",
+      "source_id": "mef_tesoro",
+      "status": "ok",
+      "label": "mef_vita_media",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122236Z_5d8dcdd2",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 61,
+          "clean": 61,
+          "mart": 61
+        },
+        "output_bytes": {
+          "raw": 1591,
+          "clean": 1210,
+          "mart": 1220
+        },
+        "started_at": "2026-08-25T12:22:36.148373+00:00",
+        "finished_at": "2026-08-25T12:22:37.651729+00:00",
+        "duration_seconds": 1.503
+      }
+    },
+    {
+      "id": "ocpi_serie_storiche",
+      "source_id": "ocpi",
+      "status": "ok",
+      "label": "ocpi_serie_storiche",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20260825T122237Z_0f9ce2a5",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "raw": 4439,
+          "clean": 4439,
+          "mart": 4439
+        },
+        "output_bytes": {
+          "raw": 294801,
+          "clean": 32617,
+          "mart": 32634
+        },
+        "started_at": "2026-08-25T12:22:37.700992+00:00",
+        "finished_at": "2026-08-25T12:22:41.770963+00:00",
+        "duration_seconds": 4.07
+      }
+    }
+  ],
+  "codelists": [],
+  "entities": {
+    "entities": {
+      "Nazione": {
+        "entity": "Nazione",
+        "label": "Nazione",
+        "datasets": [
+          {
+            "slug": "eurostat_rendimento_10y",
+            "name": "Eurostat Rendimento 10Y",
+            "column": "paese",
+            "semantic_type": "country_code"
+          }
+        ],
+        "types": {
+          "country_code": 1
+        }
+      },
+      "Tempo": {
+        "entity": "Tempo",
+        "label": "Tempo / data",
+        "datasets": [
+          {
+            "slug": "eurostat_debito_pil",
+            "name": "Eurostat Debito Pil",
+            "column": "anno",
+            "semantic_type": "year"
+          },
+          {
+            "slug": "eurostat_rendimento_10y",
+            "name": "Eurostat Rendimento 10Y",
+            "column": "mese",
+            "semantic_type": "month"
+          },
+          {
+            "slug": "mef_vita_media",
+            "name": "Mef Vita Media",
+            "column": "mese",
+            "semantic_type": "month"
+          },
+          {
+            "slug": "ocpi_serie_storiche",
+            "name": "Ocpi Serie Storiche",
+            "column": "anno",
+            "semantic_type": "year"
+          }
+        ],
+        "types": {
+          "year": 2,
+          "month": 2
+        }
+      }
+    },
+    "bridges": []
+  }
+}
