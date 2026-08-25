@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Smoke test di integrità: verifica che i layer prodotti esistano e abbiano forma
 attesa. Antidoto alle regressioni — run rapido dopo `make all`.
