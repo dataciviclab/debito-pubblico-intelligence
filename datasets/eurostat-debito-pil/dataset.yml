@@ -1,0 +1,52 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "eurostat_debito_pil"
+  source_id: "eurostat"
+  tags: [finanza-pubblica, debito, pil, eurostat, maastricht]
+  category: finanza-pubblica
+  years: [2026]
+  time_coverage:
+    start_year: 1995
+    end_year: 2025
+
+raw:
+  output_policy: overwrite
+  sources:
+    - name: "eurostat_debito_pil"
+      type: "sdmx"
+      args:
+        agency: "ESTAT"
+        flow: "gov_10dd_edpt1"
+        filters:
+          geo: "IT"
+          unit: ["PC_GDP", "MIO_EUR"]
+          sector: ["S13", "S1311", "S1313", "S1314"]
+          na_item: "GD"
+          freq: "A"
+      primary: true
+
+clean:
+  sql: "sql/clean.sql"
+  read:
+    source: "auto"
+    mode: "latest"
+    delim: ","
+    encoding: "utf-8"
+    header: true
+  required_columns: [anno, settore, debito_pil_pct, stock_mln_eur]
+  validate:
+    not_null: [anno, settore]
+    min_rows: 100
+
+mart:
+  tables:
+    - name: "mart_debito_pil"
+      sql: "sql/mart_debito_pil.sql"
+  required_tables: ["mart_debito_pil"]
+  validate:
+    table_rules:
+      mart_debito_pil:
+        not_null: [anno, settore]
+        primary_key: [anno, settore]

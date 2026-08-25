@@ -77,19 +77,24 @@ Tutte le fonti sono pubbliche e verificabili.
 ## Come funziona
 
 ```
-fetch → normalize → mart → reconcile → signals → scenario → panorama
+toolkit run (fetch→clean→mart) → reconcile → signals → scenario → panorama
 ```
 
 ```bash
-make all            # esegue l'intera pipeline
-make panorama       # genera data/reporting/panorama.md + .json
-python3 test_smoke.py   # verifica l'integrità dei layer
+make all              # toolkit + analitici + test
+make run-all          # solo toolkit (fetch/clean/mart per tutti i dataset)
+make reconcile        # fusion layer (riconciliazione cross-fonte)
+make signals          # segnali con soglie
+make scenario         # scenari di sostenibilità
+make panorama         # genera data/reporting/panorama.md + .json
+make test             # pytest (verifica integrità layer)
 ```
 
-I dati sono scaricati dal web a ogni run e normalizzati in un archivio uniforme
-(`data/mart/`). Il **fusion layer** confronta le fonti tra loro. I **segnali**
-calcolano gli indicatori con soglie esplicite. Gli **scenari** proiettano la
-traiettoria del debito/PIL. Tutto converge nel **panorama**.
+I datasetEurostat sono gestiti dal **toolkit** (`datasets/*/dataset.yml`). Le fonti
+custom (FPI, OCPI, MEF, BDAP) usano script Python che producono CSV/parquet, poi
+il toolkit gestisce clean→mart. Il **fusion layer** confronta le fonti tra loro.
+I **segnali** calcolano gli indicatori con soglie esplicite. Gli **scenari**
+proiettano la traiettoria del debito/PIL. Tutto converge nel **panorama**.
 
 ## Trasparenza e limiti
 
@@ -101,6 +106,5 @@ traiettoria del debito/PIL. Tutto converge nel **panorama**.
 
 ## Riferimenti
 
-- [NazarenoLecis/Debito_pubblico_italiano](https://github.com/NazarenoLecis/Debito_pubblico_italiano) — pipeline di riferimento sul parsing FPI
 - Banca d'Italia BDS — [pubblicazione FPI](https://www.bancaditalia.it/statistiche/tematiche/conti-pubblici/dp-pa/)
 - MEF Dipartimento del Tesoro — [dati statistici](https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/)

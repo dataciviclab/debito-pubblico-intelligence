@@ -54,10 +54,15 @@ import sys
 from pathlib import Path
 
 import duckdb
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from datasets._shared.paths import (
+    MART_FPI_AP, MART_FPI_FAB, MART_EUROSTAT_DP, MART_OCPI,
+    MART_MEF_SCAD, MART_MEF_T12, MART_MEF_COMP, RECON_DIR,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
-RECON_DIR = ROOT / "data" / "reconcile"
 
 ANOMALY_THRESHOLD_PCT = 2.0
 
@@ -67,8 +72,8 @@ def _read_fpi_december(con):
     return con.execute("""
         SELECT cast(strftime(data, '%Y') AS INT) AS anno,
                max_by(valore_mln_eur, data) AS fpi_dic_mln_eur
-        FROM read_parquet('data/mart/debt_fatti.parquet')
-        WHERE tavola = 'debito_ap_sottosettori'
+        FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
+        WHERE tavola_nome = 'debito_ap_sottosettori'
           AND codice = 'S13.MGD'
         GROUP BY 1
         ORDER BY 1
@@ -109,12 +114,10 @@ def _compare(con, name, fpi_dic, other_rows, out_path):
 
 
 def run():
-    fatti = ROOT / "data" / "mart" / "debt_fatti.parquet"
-    euro = RAW_DIR / "eurostat_gov10dd_stock.csv"
-    ocpi = RAW_DIR / "ocpi_serie_storiche.csv"
-    if not fatti.exists() or not euro.exists():
-        print("[ERRORE] servono mart FPI e fetch eurostat")
+    if not MART_FPI_AP.exists():
+        print(f"[ERRORE] mart FPI mancante: {MART_FPI_AP}")
         sys.exit(1)
+    ocpi_path = str(MART_OCPI)
 
     RECON_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
@@ -123,39 +126,31 @@ def run():
 
     print("=== CASO 1: FPI vs Eurostat (gov_10dd_edpt1) ===")
     eur_rows = con.execute("""
-        SELECT anno, stock_mln_eur FROM read_csv('data/raw/eurostat_gov10dd_stock.csv')
+        SELECT anno, stock_mln_eur FROM read_parquet('out/data/mart/eurostat_debito_pil/2026/mart_debito_pil.parquet')
         WHERE settore = 'S13' ORDER BY anno
     """).fetchall()
     _compare(con, "eurostat", fpi_dic, eur_rows, RECON_DIR / "reconcile_fpi_vs_eurostat.csv")
 
-    if ocpi.exists():
+    if MART_OCPI.exists():
         print("\n=== CASO 2: FPI vs OCPI (serie C 'Debito') ===")
         ocpi_rows = con.execute("""
-            SELECT anno, valore FROM read_csv('data/raw/ocpi_serie_storiche.csv')
+            SELECT anno, valore FROM read_parquet('out/data/mart/ocpi_serie_storiche/2026/mart_serie_storiche.parquet')
             WHERE serie = 'C' ORDER BY anno
         """).fetchall()
         _compare(con, "ocpi", fpi_dic, ocpi_rows, RECON_DIR / "reconcile_fpi_vs_ocpi.csv")
     else:
         print("\n[reconcile] ocpi non disponibile (skip caso 2)")
-    mef = RAW_DIR / "mef_scadenze.csv"
-    mef_comp = RAW_DIR / "mef_composizione.csv"
-    if mef_comp.exists():
+    mef_comp_parquet = str(MART_MEF_COMP) if MART_MEF_COMP.exists() else None
+    if mef_comp_parquet:
         print("\n=== CASO 3: MEF composizione titoli (Tesoro) vs FPI debito AP in titoli (F3) ===")
         # Totale titoli Tesoro in circolazione (mln EUR, stessa unità di FPI)
         import csv as _csv
 
-        total_mef = None
-        raw = mef_comp.read_bytes()
-        for enc in ("utf-8", "latin-1", "cp1252"):
-            try:
-                text = raw.decode(enc)
-                break
-            except UnicodeDecodeError:
-                continue
-        for row in _csv.reader(io.StringIO(text), delimiter=";"):
-            if row and row[0].strip() == "Totale":
-                total_mef = float(row[1].replace(".", "").replace(",", "."))
-                break
+        total_mef_rows = con.execute(f"""
+            SELECT sum(valore_mln_eur) FROM read_parquet('{mef_comp_parquet}')
+            WHERE tipologia = 'Totale'
+        """).fetchall()
+        total_mef = total_mef_rows[0][0] if total_mef_rows and total_mef_rows[0][0] else None
         if total_mef is None:
             print("[reconcile] MEF composizione: Totale non trovato")
             return
@@ -163,9 +158,9 @@ def run():
 
         fpi_f3 = con.execute("""
             SELECT data, sum(valore_mln_eur)
-            FROM read_parquet('data/mart/debt_fatti.parquet')
-            WHERE (tavola = 'debito_ap_strumenti' AND codice = 'S13.F31')
-               OR (tavola = 'debito_ap_strumenti' AND codice = 'S13.F32')
+            FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
+            WHERE (tavola_nome = 'debito_ap_strumenti' AND codice = 'S13.F31')
+               OR (tavola_nome = 'debito_ap_strumenti' AND codice = 'S13.F32')
             GROUP BY data ORDER BY data DESC LIMIT 1
         """).fetchall()
         if fpi_f3 and fpi_f3[0][1]:
@@ -184,10 +179,9 @@ def run():
                         round(ratio, 2) if ratio else None])
         print(f"[reconcile] OK {out}")
 
-        if mef.exists():
-            n_isin = sum(1 for line in mef.read_bytes().decode("latin-1").splitlines()
-                         if line.startswith("IT"))
-            print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione (detail file)")
+        n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{str(MART_MEF_SCAD)}')").fetchall()
+        n_isin = n_isin_rows[0][0] if n_isin_rows else 0
+        print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione")
     else:
         print("\n[reconcile] mef non disponibile (skip caso 3)")
 
@@ -200,14 +194,14 @@ def run():
 
         rows = con.execute("""
             SELECT mese_scadenza, sum(valore_mln_eur)
-            FROM read_parquet('data/build/mef_titoli_12m.parquet')
-            WHERE tipologia = 'TOTALE' GROUP BY 1 ORDER BY 1
+            FROM read_parquet('out/data/mart/mef_titoli_12m/2026/mart_titoli_12m.parquet')
+            WHERE tipologia = 'TOTALE' AND try_cast(valore_mln_eur AS double) IS NOT NULL GROUP BY 1 ORDER BY 1
         """).fetchall()
         off_map = {m: v for m, v in rows}
 
         ours = con.execute("""
             SELECT strftime(scadenza, '%Y-%m'), round(sum(circolante_nom_eur)/1e6, 0)
-            FROM read_parquet('data/build/mef_scadenze.parquet')
+            FROM read_parquet('out/data/mart/mef_scadenze_isin/2026/mart_scadenze_isin.parquet')
             WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)
             GROUP BY 1 ORDER BY 1
         """).fetchall()
@@ -249,24 +243,23 @@ def run():
         print(f"[reconcile] OK {out}")
 
     # CASO 5: fabbisogno AP (TCCE0125) vs variazione stock (S13.MGD)
-    fatti = ROOT / "data" / "mart" / "debt_fatti.parquet"
-    if fatti.exists():
+    if MART_FPI_FAB.exists():
         print("\n=== CASO 5: fabbisogno AP vs variazione stock (SFA implicito) ===")
         import csv as _csv
 
         # stock mensile (serie): per calcolare la variazione m/m
         stock = con.execute("""
             SELECT data, valore_mln_eur
-            FROM read_parquet('data/mart/debt_fatti.parquet')
-            WHERE tavola = 'debito_ap_sottosettori' AND codice = 'S13.MGD'
+            FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
+            WHERE tavola_nome = 'debito_ap_sottosettori' AND codice = 'S13.MGD'
             ORDER BY data
         """).fetchall()
         stock_map = {d: v for d, v in stock}
 
         fab = con.execute("""
             SELECT data, valore_mln_eur
-            FROM read_parquet('data/mart/debt_fatti.parquet')
-            WHERE tavola = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
+            FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
+            WHERE tavola_nome = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
             ORDER BY data
         """).fetchall()
         fab_map = {d: v for d, v in fab}
@@ -316,14 +309,14 @@ def run():
 
     # CASO 6+7: BDAP Stato (oneri vs OCPI; accensione prestiti vs fabbisogno FPI)
     bdap = ROOT / "data" / "build" / "bdap_stato_summary.csv"
-    ocpi = ROOT / "data" / "raw" / "ocpi_serie_storiche.csv"
-    if bdap.exists() and ocpi.exists():
+    ocpi_parquet = str(MART_OCPI) if MART_OCPI.exists() else None
+    if bdap.exists() and ocpi_parquet:
         import csv as _csv
 
         print("\n=== CASO 6: oneri debito BDAP vs interessi OCPI ===")
         # interessi OCPI: serie J = spesa per interessi in mln EUR correnti
-        ocpi_int = {int(r["anno"]): float(r["valore"]) for r in _csv.DictReader(open(ocpi))
-                    if r["serie"] == "J"}
+        ocpi_rows = con.execute(f"""SELECT anno, valore FROM read_parquet('{ocpi_parquet}') WHERE serie = 'J'""").fetchall()
+        ocpi_int = {int(r[0]): float(r[1]) for r in ocpi_rows}
 
         report6 = []
         for r in _csv.DictReader(open(bdap)):
@@ -390,10 +383,10 @@ def run():
 
         print("\n=== CASO 7: accensione prestiti BDAP vs fabbisogno AP FPI ===")
         # fabbisogno annuale: somma del fabbisogno mensile S13.MGD per anno
-        fab_annual = con.execute("""
+        fab_annual = con.execute(f"""
             SELECT cast(strftime(data, '%Y') AS INT) anno, sum(valore_mln_eur) tot
-            FROM read_parquet('data/mart/debt_fatti.parquet')
-            WHERE tavola = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
+            FROM read_parquet('{str(MART_FPI_FAB)}')
+            WHERE tavola_nome = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
             GROUP BY 1 ORDER BY 1
         """).fetchall()
         fab_map = {a: v for a, v in fab_annual}

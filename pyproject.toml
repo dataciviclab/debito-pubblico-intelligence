@@ -1,9 +1,46 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "debito-pubblico-intelligence"
 version = "0.1.0"
 description = "Intelligence sul debito pubblico italiano — riconciliazione multi-fonte, segnali e mart queryabile"
+readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+
+# duckdb: dipendenza runtime (usata dai test SQL e dagli script analitici).
+# toolkit non è importato (CLI esterno) → vive nell'extra `pipeline`.
 dependencies = [
-    "duckdb>=1.0",
+    "duckdb>=1.5.3,<2",
+]
+
+# Nessun package Python: il repo è dati + SQL + scripts.
+[tool.setuptools]
+packages = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+]
+pipeline = [
+    "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git",
     "lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git",
 ]
+
+[project.urls]
+Home = "https://github.com/dataciviclab/debito-pubblico-intelligence"
+
+[tool.pytest.ini_options]
+markers = [
+    "contract: interfaccia pubblica, artifact format, contratto API, path contract, output CI",
+    "policy: regola Lab non ovvia o comportamento cross-component",
+    "regression: bug fix documentato in issue/PR",
+    "smoke: test che fa chiamate reali (richiede connettivita')",
+]
+
+[tool.toolkit.extends]
+source_id = "debito_pubblico_intelligence"

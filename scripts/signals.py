@@ -1,89 +1,83 @@
 #!/usr/bin/env python3
-"""
-Step signals: segnali con soglie calibrate sullo storico.
-
-Segnali attivi:
-  - debito_totale_ap: livello e variazione m/m del debito AP (S13.MGD, FPI)
-  - rendimento_10y: ultimo rendimento e variazione m/m (Eurostat irt_lt_mcby_m)
-  - debito_pil: debito/PIL ultimo anno disponibile (Eurostat gov_10dd_edpt1, PC_GDP)
-  - i_g: differenziale interessi-crescita (OCPI serie S) — termometro dinamica debito
-  - saldo_primario: % PIL (OCPI serie G) — capacità di ripagare senza nuovi debiti
-  - spesa_interessi_pil: % PIL (OCPI serie I)
-
-Soglie (bootstrap, da calibrare sul primo storico completo):
-  - debito/PIL: > 130% alto (Italia sopra da anni) — confronto con storico
-  - i-g: > 0 significa debito che cresce da solo (interessi > crescita)
-  - saldo primario: < 0 significa nuovi debiti per coprire la gestione corrente
-
-Output: data/signals/signals.csv + summary a terminale.
-"""
+"""Step signals: segnali con soglie calibrate sullo storico."""
 
 import csv
-import sys
+import duckdb
 from pathlib import Path
 
-from lab_connectors.duckdb.core import safe_connect
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from datasets._shared.paths import (
+    MART_EUROSTAT_DP, MART_EUROSTAT_R10, MART_FPI_AP, MART_FPI_DET,
+    MART_MEF_SCAD, MART_MEF_VM, MART_OCPI, SIG_DIR,
+)
 
-ROOT = Path(__file__).resolve().parent.parent
-SIG_DIR = ROOT / "data" / "signals"
+# Path stringhe per le query SQL
+A = str(MART_FPI_AP)
+D = str(MART_FPI_DET)
+EDP = str(MART_EUROSTAT_DP)
+R10 = str(MART_EUROSTAT_R10)
+OC = str(MART_OCPI)
+SC = str(MART_MEF_SCAD)
+VM = str(MART_MEF_VM)
 
-# (nome, query sorgente, descrizione) — valore atteso: numero
-# ogni riga: SELECT <valore> [, <precedente>] FROM read_csv/parquet(...)
 SIGNAL_QUERIES = {
     "debito_totale_ap_mln_eur": (
-        "SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
-        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1"
+        f"SELECT valore_mln_eur FROM read_parquet('{A}') "
+        "WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1"
     ),
     "debito_totale_ap_mm_pct": (
-        "WITH s AS (SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
-        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 2) "
+        f"WITH s AS (SELECT valore_mln_eur FROM read_parquet('{A}') "
+        "WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 2) "
         "SELECT (max(valore_mln_eur) - min(valore_mln_eur)) / min(valore_mln_eur) * 100 FROM s"
     ),
     "rendimento_10y_pct": (
-        "SELECT rendimento_pct FROM read_csv('data/raw/eurostat_irt_lt_mcby.csv') "
-        "ORDER BY mese DESC LIMIT 1"
+        f"SELECT rendimento_pct FROM read_parquet('{R10}') "
+        "WHERE paese='IT' ORDER BY mese DESC LIMIT 1"
     ),
     "debito_pil_pct": (
-        "SELECT debito_pil_pct FROM read_csv('data/raw/eurostat_gov10dd.csv') "
+        f"SELECT debito_pil_pct FROM read_parquet('{EDP}') "
         "WHERE settore='S13' ORDER BY anno DESC LIMIT 1"
     ),
     "i_g_pp": (
-        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        f"SELECT valore FROM read_parquet('{OC}') "
         "WHERE serie='S' ORDER BY anno DESC LIMIT 1"
     ),
     "saldo_primario_pil_pct": (
-        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        f"SELECT valore FROM read_parquet('{OC}') "
         "WHERE serie='G' ORDER BY anno DESC LIMIT 1"
     ),
     "spesa_interessi_pil_pct": (
-        "SELECT valore FROM read_csv('data/raw/ocpi_serie_storiche.csv') "
+        f"SELECT valore FROM read_parquet('{OC}') "
         "WHERE serie='I' ORDER BY anno DESC LIMIT 1"
     ),
     "rollover_12m_pct": (
-        "WITH t AS (SELECT sum(circolante_nom_eur) tot FROM read_parquet('data/build/mef_scadenze.parquet') "
+        f"WITH t AS (SELECT sum(circolante_nom_eur) tot FROM read_parquet('{SC}') "
         "WHERE scadenza >= data_ref), "
-        "r AS (SELECT sum(circolante_nom_eur) r12 FROM read_parquet('data/build/mef_scadenze.parquet') "
+        f"r AS (SELECT sum(circolante_nom_eur) r12 FROM read_parquet('{SC}') "
         "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)) "
         "SELECT round(r12 / tot * 100, 1) FROM t, r"
     ),
     "rollover_12m_mld_eur": (
-        "SELECT round(sum(circolante_nom_eur) / 1e9, 1) FROM read_parquet('data/build/mef_scadenze.parquet') "
+        f"SELECT round(sum(circolante_nom_eur) / 1e9, 1) FROM read_parquet('{SC}') "
         "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)"
     ),
     "vita_media_anni": (
-        "SELECT round(max(vita_media_mesi) / 12.0, 2) FROM read_parquet('data/build/mef_vita_media.parquet') "
+        f"SELECT round(max(vita_media_mesi) / 12.0, 2) FROM read_parquet('{VM}') "
         "WHERE tipologia = 'TOTALE'"
     ),
     "spread_btp_bund_pp": (
-        "WITH it AS (SELECT rendimento_pct r FROM read_csv('data/raw/eurostat_irt_lt_mcby.csv') ORDER BY mese DESC LIMIT 1), "
-        "de AS (SELECT rendimento_pct r FROM read_csv('data/raw/eurostat_irt_lt_mcby_de.csv') ORDER BY mese DESC LIMIT 1) "
+        f"WITH it AS (SELECT rendimento_pct r FROM read_parquet('{R10}') "
+        "WHERE paese='IT' ORDER BY mese DESC LIMIT 1), "
+        f"de AS (SELECT rendimento_pct r FROM read_parquet('{R10}') "
+        "WHERE paese='DE' ORDER BY mese DESC LIMIT 1) "
         "SELECT round(it.r - de.r, 2) FROM it, de"
     ),
     "quota_banca_italia_pct": (
-        "SELECT round((SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
-        "WHERE tavola='debito_ap_detentori' AND codice='S13.MGD.S121' AND data=(SELECT max(data) FROM read_parquet('data/mart/debt_fatti.parquet') WHERE tavola='debito_ap_detentori' AND codice='S13.MGD.S121')) "
-        "/ (SELECT valore_mln_eur FROM read_parquet('data/mart/debt_fatti.parquet') "
-        "WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD' AND data=(SELECT max(data) FROM read_parquet('data/mart/debt_fatti.parquet') WHERE tavola='debito_ap_sottosettori' AND codice='S13.MGD')) * 100, 1)"
+        f"SELECT round((SELECT valore_mln_eur FROM read_parquet('{D}') "
+        "WHERE codice='S13.MGD.S121' AND data=(SELECT max(data) FROM read_parquet('" + D + "') WHERE codice='S13.MGD.S121')) "
+        "/ (SELECT valore_mln_eur FROM read_parquet('" + A + "') "
+        "WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' AND data=(SELECT max(data) FROM read_parquet('" + A + "') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD')) * 100, 1)"
     ),
 }
 
@@ -95,23 +89,22 @@ SIGNAL_META = {
     "i_g_pp": ("i-g (pp)", "sostenibilita", ">0: debito cresce da solo"),
     "saldo_primario_pil_pct": ("saldo primario (% PIL)", "sostenibilita", "<0: nuovo debito per gestione"),
     "spesa_interessi_pil_pct": ("spesa interessi (% PIL)", "sostenibilita", None),
-    "rollover_12m_pct": ("debito in scadenza prossimi 12m (% del residuo)", "rischio", ">15%: rollover elevato"),
+    "rollover_12m_pct": ("debito in scadenza prossimi 12m (%)", "rischio", ">15%: rollover elevato"),
     "rollover_12m_mld_eur": ("debito in scadenza prossimi 12m (mld EUR)", "rischio", None),
-    "vita_media_anni": ("vita media residua dei titoli (anni)", "rischio", "<5: durata corta"),
-    "spread_btp_bund_pp": ("spread BTP-Bund 10Y (pp)", "costo", ">2: pressione di mercato"),
-    "quota_banca_italia_pct": ("debito AP detenuto da Banca d'Italia (% dello stock)", "detentori", None),
+    "vita_media_anni": ("vita media residua titoli (anni)", "rischio", "<5: durata corta"),
+    "spread_btp_bund_pp": ("spread BTP-Bund 10Y (pp)", "costo", ">2: pressione mercato"),
+    "quota_banca_italia_pct": ("debito AP detenuto da Bd'Italia (%)", "detentori", None),
 }
 
 
 def run():
     SIG_DIR.mkdir(parents=True, exist_ok=True)
-
     report = []
-    with safe_connect() as con:
+    with duckdb.connect() as con:
         for name, query in SIGNAL_QUERIES.items():
             try:
                 val = con.execute(query).fetchone()
-            except Exception as exc:  # fonte opzionale non disponibile
+            except Exception as exc:
                 print(f"[signals] skip {name}: {exc}")
                 continue
             if val is None or val[0] is None:
@@ -123,7 +116,6 @@ def run():
             if soglia:
                 msg += f"  ({soglia})"
             print(msg)
-
     out = SIG_DIR / "signals.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["segnale", "descrizione", "categoria", "valore"])

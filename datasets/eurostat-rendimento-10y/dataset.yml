@@ -1,0 +1,45 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "eurostat_rendimento_10y"
+  source_id: "eurostat"
+  tags: [finanza-pubblica, rendimento, titoli, eurostat, spread, btp-bund]
+  category: finanza-pubblica
+  years: [2026]
+  time_coverage:
+    start_year: 1980
+    end_year: 2026
+
+raw:
+  output_policy: overwrite
+  sources:
+    - name: "eurostat_irt_lt_mcby_m"
+      type: "sdmx"
+      args:
+        agency: "ESTAT"
+        flow: "irt_lt_mcby_m"
+
+clean:
+  sql: "sql/clean.sql"
+  read:
+    source: "auto"
+    mode: "latest"
+    delim: ","
+    encoding: "utf-8"
+    header: true
+  required_columns: [mese, paese, rendimento_pct]
+  validate:
+    not_null: [mese, rendimento_pct, paese]
+    min_rows: 100
+
+mart:
+  tables:
+    - name: "mart_rendimento_10y"
+      sql: "sql/mart_rendimento_10y.sql"
+  required_tables: ["mart_rendimento_10y"]
+  validate:
+    table_rules:
+      mart_rendimento_10y:
+        not_null: [mese, rendimento_pct, paese]
+        primary_key: [mese, paese]

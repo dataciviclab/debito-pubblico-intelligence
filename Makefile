@@ -1,50 +1,84 @@
 # Debito Pubblico Intelligence — Makefile
-.PHONY: all fetch fpi eurostat ocpi mef normalize mart reconcile signals scenario panorama test clean
+# Pipeline toolkit (dataset.yml) + script analitici legacy.
+# Convenzione Lab: toolkit gestisce fetch→clean→mart; gli script
+# Python gestiscono reconcile, signals, scenarios, panorama.
+TOOLKIT = toolkit
 
-# Pipeline completa: fonti -> normalize -> mart -> reconcile -> segnali -> scenario -> panorama
-all: fetch normalize mart reconcile signals scenario panorama test
+# --- Dataset del repo -------------------------------------------------------
+DATASETS := $(shell find datasets -name dataset.yml 2>/dev/null | sort)
 
-# Step 1: scarica le fonti ufficiali (Banca d'Italia FPI, Eurostat, OCPI, MEF)
-fetch:
-	python3 pipeline.py --step fetch
+# --- Run toolkit ------------------------------------------------------------
 
-# Sotto-step singoli (utili durante bootstrap/debug)
-fpi:
-	python3 pipeline.py --step fetch --source fpi
-eurostat:
-	python3 pipeline.py --step fetch --source eurostat
-ocpi:
-	python3 pipeline.py --step fetch --source ocpi
-mef:
-	python3 pipeline.py --step fetch --source mef
+.PHONY: run
+run:
+	$(TOOLKIT) run --batch batch.txt
 
-# Step 2: normalizza source-level -> long/tidy
-normalize:
-	python3 pipeline.py --step normalize
+.PHONY: run-all
+run-all:
+	@find datasets -name dataset.yml | sort > batch.txt; \
+	$(TOOLKIT) run --batch batch.txt
 
-# Step 3: mart queryabile (debito per sottosettore/strumento/detentore)
-mart:
-	python3 pipeline.py --step mart
+# --- Validazione config ------------------------------------------------------
 
-# Step 4: fusion layer — riconciliazione cross-fonte
-reconcile:
-	python3 pipeline.py --step reconcile
+.PHONY: check
+check:
+	@for f in $(DATASETS); do \
+		echo "→ $$f"; \
+		$(TOOLKIT) run preflight --config "$$f" > /dev/null 2>&1 || exit 1; \
+	done
+	@echo "✅ All configs valid"
 
-# Step 5: segnali e alert con soglie
+# --- Script analitici (legacy, leggono da data/) ----------------------------
+# reconcile.py e signals.py leggono ancora da data/ (legacy path).
+# bdap.py produce data/build/bdap_*.csv da GCS.
+# Questi target funzionano SOLO se il legacy pipeline è stato eseguito.
+
+.PHONY: bdap reconcile signals scenario panorama
+bdap:
+	python3 scripts/bdap.py
+
+reconcile: bdap
+	python3 scripts/reconcile.py
+
 signals:
-	python3 pipeline.py --step signals
+	python3 scripts/signals.py
 
-# Step 6: scenari di sostenibilità (traiettorie debito/PIL)
 scenario:
-	python3 pipeline.py --step scenario
+	python3 scripts/scenarios.py
 
-# Deliverable: panorama in data/reporting/ (md + json)
 panorama:
 	python3 reports/panorama.py
 
-# Test di integrità
-test:
-	python3 test_smoke.py
+# --- Pipeline completa: toolkit + analitici + test ----------------------------
 
+.PHONY: all
+all: run-all reconcile signals scenario panorama test
+
+# --- Test --------------------------------------------------------------------
+
+.PHONY: test
+test:
+	python3 -m pytest tests/ -v
+
+# --- Registry ----------------------------------------------------------------
+
+.PHONY: registry registry-write
+registry:
+	$(TOOLKIT) registry build --prefix debito_pubblico_intelligence --flat
+
+registry-write:
+	$(TOOLKIT) registry build --prefix debito_pubblico_intelligence --flat --write
+
+# --- Pulizia -----------------------------------------------------------------
+
+.PHONY: clean
 clean:
+	rm -rf out/data/_runs out/data/probe out/data/raw out/data/clean out/data/mart
+
+.PHONY: clean-legacy
+clean-legacy:
 	rm -rf data/raw data/build data/mart data/reconcile data/signals data/reporting
+
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:' Makefile | sort

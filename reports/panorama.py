@@ -41,7 +41,7 @@ def _signals_map():
 def _profile(con):
     rows = con.execute("""
         SELECT cast(year(scadenza) AS INT) anno, round(sum(circolante_nom_eur)/1e6,0) mln
-        FROM read_parquet('data/build/mef_scadenze.parquet')
+        FROM read_parquet('out/data/mart/mef_scadenze_isin/2026/mart_scadenze_isin.parquet')
         WHERE scadenza >= data_ref
         GROUP BY 1 ORDER BY 1
     """).fetchall()
@@ -59,7 +59,7 @@ def _scenarios():
 def _top_isin(con, n=10):
     rows = con.execute("""
         SELECT isin, tipo, scadenza, round(circolante_nom_eur/1e6,0) mln
-        FROM read_parquet('data/build/mef_scadenze.parquet')
+        FROM read_parquet('out/data/mart/mef_scadenze_isin/2026/mart_scadenze_isin.parquet')
         WHERE scadenza >= data_ref
         ORDER BY circolante_nom_eur DESC LIMIT ?
     """, [n]).fetchall()
