@@ -74,7 +74,7 @@ jobs:
         uses: dataciviclab/.github/actions/registry-update-pr@main
         with:
           prefix: "debito_pubblico_intelligence"
-          flat: "true"
+          flat: "false"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
