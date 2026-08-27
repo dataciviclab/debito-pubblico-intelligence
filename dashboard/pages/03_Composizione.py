@@ -22,12 +22,16 @@ if df.empty:
     st.warning("Nessun dato disponibile.")
     st.stop()
 
-totale = df["valore_mln_eur"].sum()
+# Il totale è nella riga "Totale", non la somma di tutte le righe
+totale_row = df[df["tipologia"] == "Totale"]
+totale = totale_row["valore_mln_eur"].iloc[0] if not totale_row.empty else df["valore_mln_eur"].sum()
 
 # ── KPI ───────────────────────────────────────────────────────────
 col1, col2, col3 = st.columns(3)
 col1.metric("💰 Totale Debito", f"€ {totale/1e3:,.0f} mld")
-col2.metric("📋 Tipologie", f"{len(df)}")
+# Tipologie escludendo "Totale"
+n_tipologie = len(df[df["tipologia"] != "Totale"])
+col2.metric("📋 Tipologie", f"{n_tipologie}")
 # BTP dominante
 btp = df[df["tipologia"].str.startswith("BTP")]["valore_mln_eur"].sum()
 col3.metric("📊 BTP (tutte)", f"{btp/totale*100:.1f}%")
