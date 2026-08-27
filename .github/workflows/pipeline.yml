@@ -3,6 +3,11 @@ name: Pipeline
 on:
   pull_request:
     types: [closed]
+    paths:
+      - "datasets/**"
+      - "support/**"
+      - "scripts/**"
+      - ".github/workflows/pipeline.yml"
   schedule:
     - cron: '0 6 1 * *'
   workflow_dispatch:
