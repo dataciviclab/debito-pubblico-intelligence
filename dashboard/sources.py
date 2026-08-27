@@ -5,7 +5,7 @@ from __future__ import annotations
 import streamlit as st
 from pathlib import Path
 
-from lab_connectors.duckdb.queries import load_clean, query_clean
+from lab_connectors.duckdb.queries import load_clean, query_clean, _query_df
 from lab_connectors.registry import load_registry
 
 PREFIX = "debito_pubblico_intelligence/"
@@ -35,7 +35,7 @@ def query_ocpi(sql: str, years: list[int] | None = None):
     urls = _flat_urls("ocpi_serie_storiche", years or [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -55,7 +55,7 @@ def query_debito_pil(sql: str):
     urls = _flat_urls("eurostat_debito_pil", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -65,7 +65,7 @@ def query_rendimento(sql: str):
     urls = _flat_urls("eurostat_rendimento_10y", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -75,7 +75,7 @@ def query_composizione(sql: str):
     urls = _flat_urls("mef_composizione", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -84,7 +84,7 @@ def query_composizione(sql: str):
 def load_scadenze():
     urls = _flat_urls("mef_scadenze_isin", [2026])
     paths = "', '".join(urls)
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"SELECT * FROM read_parquet(['{paths}'], union_by_name=true)")
 
 
@@ -92,7 +92,7 @@ def query_scadenze(sql: str):
     urls = _flat_urls("mef_scadenze_isin", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -101,7 +101,7 @@ def query_scadenze(sql: str):
 def load_titoli_12m():
     urls = _flat_urls("mef_titoli_12m", [2026])
     paths = "', '".join(urls)
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"SELECT * FROM read_parquet(['{paths}'], union_by_name=true)")
 
 
@@ -110,7 +110,7 @@ def load_titoli_12m():
 def load_vita_media():
     urls = _flat_urls("mef_vita_media", [2026])
     paths = "', '".join(urls)
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"SELECT * FROM read_parquet(['{paths}'], union_by_name=true)")
 
 
@@ -118,7 +118,7 @@ def query_vita_media(sql: str):
     urls = _flat_urls("mef_vita_media", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
@@ -128,7 +128,7 @@ def query_fpi(sql: str):
     urls = _flat_urls("fpi_debito_pa", [2026])
     paths = "', '".join(urls)
     cte = f"WITH clean_input AS (SELECT * FROM read_parquet(['{paths}'], union_by_name=true))"
-    from lab_connectors.duckdb.core import _query_df
+    
     return _query_df(f"{cte} {sql}")
 
 
