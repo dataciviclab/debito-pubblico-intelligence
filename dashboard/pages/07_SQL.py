@@ -8,9 +8,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import duckdb
 import streamlit as st
-from sources import _q
+from lab_connectors.duckdb.sql_page import _build_query, _get_datasets_with_columns
 from lab_connectors.registry import load_registry
-from lab_connectors.duckdb.sql_page import _get_datasets_with_columns, _build_query
 
 st.title("🧪 Query SQL")
 st.markdown("Interroga direttamente i dati del Debito Pubblico. Scrivi SQL su ``clean_input``.")
