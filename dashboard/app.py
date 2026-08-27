@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Debito Pubblico Intelligence · Dashboard Streamlit
 Lo stock, gli spread, le scadenze e la storia del debito italiano.
