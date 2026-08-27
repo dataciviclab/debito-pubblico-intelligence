@@ -1,6 +1,6 @@
 # Debito Pubblico Intelligence — Panorama
 
-*Generato il 2026-08-25. Fonti: Banca d'Italia FPI, Eurostat, OCPI, MEF Tesoro.*
+*Generato il 2026-08-27. Fonti: Banca d'Italia FPI, Eurostat, OCPI, MEF Tesoro.*
 
 ## 1. Quadro d'insieme
 
