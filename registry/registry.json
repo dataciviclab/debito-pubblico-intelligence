@@ -51,7 +51,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_debito_pil/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_debito_pil/2026/eurostat_debito_pil_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -102,7 +102,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_rendimento_10y/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/eurostat_rendimento_10y/2026/eurostat_rendimento_10y_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -174,7 +174,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/fpi_debito_pa/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/fpi_debito_pa/2026/fpi_debito_pa_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -225,7 +225,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_composizione/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_composizione/2026/mef_composizione_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -310,7 +310,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_scadenze_isin/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_scadenze_isin/2026/mef_scadenze_isin_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -360,7 +360,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_titoli_12m/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_titoli_12m/2026/mef_titoli_12m_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -409,7 +409,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_vita_media/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_vita_media/2026/mef_vita_media_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -472,7 +472,7 @@
       ],
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/ocpi_serie_storiche/",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/ocpi_serie_storiche/2026/ocpi_serie_storiche_2026_clean.parquet",
         "multi_file": false
       },
       "stage": "incubating",
@@ -488,7 +488,7 @@
       "table": "mart_debito_pil",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_debito_pil/mart_debito_pil.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_debito_pil/2026/mart_debito_pil.parquet",
         "multi_file": false
       }
     },
@@ -498,7 +498,7 @@
       "table": "mart_rendimento_10y",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_rendimento_10y/mart_rendimento_10y.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/eurostat_rendimento_10y/2026/mart_rendimento_10y.parquet",
         "multi_file": false
       }
     },
@@ -508,7 +508,7 @@
       "table": "mart_debito_ap",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_debito_ap.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/2026/mart_debito_ap.parquet",
         "multi_file": false
       }
     },
@@ -518,7 +518,7 @@
       "table": "mart_detentori",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_detentori.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/2026/mart_detentori.parquet",
         "multi_file": false
       }
     },
@@ -528,7 +528,7 @@
       "table": "mart_fabbisogno",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_fabbisogno.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/2026/mart_fabbisogno.parquet",
         "multi_file": false
       }
     },
@@ -538,7 +538,7 @@
       "table": "mart_variazione_mensile",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/mart_variazione_mensile.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/fpi_debito_pa/2026/mart_variazione_mensile.parquet",
         "multi_file": false
       }
     },
@@ -548,7 +548,7 @@
       "table": "mart_composizione",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_composizione/mart_composizione.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_composizione/2026/mart_composizione.parquet",
         "multi_file": false
       }
     },
@@ -558,7 +558,7 @@
       "table": "mart_rollover_12m",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/mart_rollover_12m.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/2026/mart_rollover_12m.parquet",
         "multi_file": false
       }
     },
@@ -568,7 +568,7 @@
       "table": "mart_scadenze_isin",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/mart_scadenze_isin.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_scadenze_isin/2026/mart_scadenze_isin.parquet",
         "multi_file": false
       }
     },
@@ -578,7 +578,7 @@
       "table": "mart_titoli_12m",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_titoli_12m/mart_titoli_12m.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_titoli_12m/2026/mart_titoli_12m.parquet",
         "multi_file": false
       }
     },
@@ -588,7 +588,7 @@
       "table": "mart_vita_media",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_vita_media/mart_vita_media.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_vita_media/2026/mart_vita_media.parquet",
         "multi_file": false
       }
     },
@@ -598,7 +598,7 @@
       "table": "mart_serie_storiche",
       "location": {
         "type": "gcs",
-        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/ocpi_serie_storiche/mart_serie_storiche.parquet",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/ocpi_serie_storiche/2026/mart_serie_storiche.parquet",
         "multi_file": false
       }
     }
@@ -612,7 +612,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141801Z_b33ac296",
+        "run_id": "20260825T110525Z_240c7757",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -627,12 +627,12 @@
         },
         "output_bytes": {
           "raw": 8683,
-          "clean": 1824,
+          "clean": 1923,
           "mart": 1789
         },
-        "started_at": "2026-08-27T14:18:01.798221+00:00",
-        "finished_at": "2026-08-27T14:18:03.437733+00:00",
-        "duration_seconds": 1.64
+        "started_at": "2026-08-25T11:05:25.662635+00:00",
+        "finished_at": "2026-08-25T11:05:28.781509+00:00",
+        "duration_seconds": 3.119
       }
     },
     {
@@ -643,27 +643,10 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141803Z_c8602b31",
+        "run_id": "20260825T110528Z_e8a5d28b",
         "year": 2026,
-        "status": "SUCCESS",
-        "quality_score": {
-          "raw": 100,
-          "clean": 95,
-          "mart": 100
-        },
-        "output_rows": {
-          "raw": 16770,
-          "clean": 11945,
-          "mart": 11945
-        },
-        "output_bytes": {
-          "raw": 392241,
-          "clean": 30814,
-          "mart": 30814
-        },
-        "started_at": "2026-08-27T14:18:03.485371+00:00",
-        "finished_at": "2026-08-27T14:18:05.935421+00:00",
-        "duration_seconds": 2.45
+        "status": "RUNNING",
+        "started_at": "2026-08-25T11:05:28.888823+00:00"
       }
     },
     {
@@ -674,7 +657,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141805Z_3734613c",
+        "run_id": "20260824T224933Z_141918bf",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -692,9 +675,9 @@
           "clean": 319054,
           "mart": 231611
         },
-        "started_at": "2026-08-27T14:18:05.987051+00:00",
-        "finished_at": "2026-08-27T14:18:09.822892+00:00",
-        "duration_seconds": 3.836
+        "started_at": "2026-08-24T22:49:33.499536+00:00",
+        "finished_at": "2026-08-24T22:49:40.400947+00:00",
+        "duration_seconds": 6.901
       }
     },
     {
@@ -705,7 +688,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141809Z_c7df5708",
+        "run_id": "20260824T221949Z_06a26add",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -723,9 +706,9 @@
           "clean": 969,
           "mart": 964
         },
-        "started_at": "2026-08-27T14:18:09.900324+00:00",
-        "finished_at": "2026-08-27T14:18:13.013692+00:00",
-        "duration_seconds": 3.113
+        "started_at": "2026-08-24T22:19:49.498611+00:00",
+        "finished_at": "2026-08-24T22:19:51.468356+00:00",
+        "duration_seconds": 1.97
       }
     },
     {
@@ -736,7 +719,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141813Z_8409d0f8",
+        "run_id": "20260824T225055Z_3245e612",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -754,9 +737,9 @@
           "clean": 10056,
           "mart": 11634
         },
-        "started_at": "2026-08-27T14:18:13.059403+00:00",
-        "finished_at": "2026-08-27T14:18:15.587504+00:00",
-        "duration_seconds": 2.528
+        "started_at": "2026-08-24T22:50:55.640502+00:00",
+        "finished_at": "2026-08-24T22:50:58.223347+00:00",
+        "duration_seconds": 2.583
       }
     },
     {
@@ -767,7 +750,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141815Z_9d03ea29",
+        "run_id": "20260824T224250Z_67b2c632",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -785,9 +768,9 @@
           "clean": 1076,
           "mart": 1089
         },
-        "started_at": "2026-08-27T14:18:15.644753+00:00",
-        "finished_at": "2026-08-27T14:18:17.651436+00:00",
-        "duration_seconds": 2.007
+        "started_at": "2026-08-24T22:42:50.670729+00:00",
+        "finished_at": "2026-08-24T22:42:52.773771+00:00",
+        "duration_seconds": 2.103
       }
     },
     {
@@ -798,7 +781,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141817Z_63fcd66c",
+        "run_id": "20260824T221943Z_872ddc84",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -816,9 +799,9 @@
           "clean": 1210,
           "mart": 1220
         },
-        "started_at": "2026-08-27T14:18:17.696061+00:00",
-        "finished_at": "2026-08-27T14:18:19.415024+00:00",
-        "duration_seconds": 1.719
+        "started_at": "2026-08-24T22:19:43.235189+00:00",
+        "finished_at": "2026-08-24T22:19:45.405331+00:00",
+        "duration_seconds": 2.17
       }
     },
     {
@@ -829,7 +812,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260827T141819Z_2244423e",
+        "run_id": "20260824T215549Z_23043fca",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -847,9 +830,9 @@
           "clean": 32617,
           "mart": 32634
         },
-        "started_at": "2026-08-27T14:18:19.460370+00:00",
-        "finished_at": "2026-08-27T14:18:22.021332+00:00",
-        "duration_seconds": 2.561
+        "started_at": "2026-08-24T21:55:49.390762+00:00",
+        "finished_at": "2026-08-24T21:55:52.854543+00:00",
+        "duration_seconds": 3.464
       }
     }
   ],
