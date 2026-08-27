@@ -12,6 +12,7 @@ registry = load_registry(Path(__file__).parent.parent.parent / "registry" / "reg
 
 render_sql_query(
     registry=registry,
+    years=[2026],
     prefix="debito_pubblico_intelligence/",
     default_slug="ocpi_serie_storiche",
     title="🧪 Query SQL",
