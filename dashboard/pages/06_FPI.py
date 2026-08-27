@@ -49,7 +49,7 @@ if not df_emissioni.empty:
             xaxis_title="Mese",
             yaxis_title="Emissioni nette (mld €)",
             height=400,
-            margin=dict(t=30),
+            margin={"t": 30},
         )
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:
@@ -79,7 +79,7 @@ if not df_stock.empty:
             x=df_stock["mese"],
             y=df_stock["stock_mln"] / 1e3,
             name="Stock Debito PA (mld €)",
-            line=dict(color="#1f77b4", width=2),
+            line={"color": "#1f77b4", "width": 2},
             fill="tozeroy",
             fillcolor="rgba(31,119,180,0.1)",
         ))
@@ -87,7 +87,7 @@ if not df_stock.empty:
             xaxis_title="Mese",
             yaxis_title="Stock (mld €)",
             height=400,
-            margin=dict(t=30),
+            margin={"t": 30},
         )
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:
@@ -125,7 +125,7 @@ if not df_fabb.empty:
             xaxis_title="Mese",
             yaxis_title="Fabbisogno (mld €)",
             height=400,
-            margin=dict(t=30),
+            margin={"t": 30},
         )
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:

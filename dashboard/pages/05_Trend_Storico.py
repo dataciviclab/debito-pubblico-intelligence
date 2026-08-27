@@ -55,13 +55,13 @@ if selected_serie:
                     x=df["anno"],
                     y=df["valore"],
                     name=SERIE[s][0],
-                    line=dict(color=colors[i % len(colors)], width=2),
+                    line={"color": colors[i % len(colors)], "width": 2},
                 ))
         fig.update_layout(
             yaxis_title="Valore",
             xaxis_title="Anno",
             height=500,
-            margin=dict(t=30),
+            margin={"t": 30},
         )
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:
@@ -104,7 +104,7 @@ if not df_dpil.empty:
             x=df_dpil["anno"],
             y=df_dpil["valore"],
             name="Debito/PIL",
-            line=dict(color="#1f77b4", width=2),
+            line={"color": "#1f77b4", "width": 2},
             fill="tozeroy",
             fillcolor="rgba(31,119,180,0.1)",
         ))
@@ -113,9 +113,9 @@ if not df_dpil.empty:
         for anno, label in EVENTI:
             if year_start <= anno <= year_end:
                 fig.add_vline(x=anno, line_dash="dot", line_color="gray", opacity=0.5)
-                fig.add_annotation(x=anno, y=df_dpil["valore"].max() * 0.9, text=label, showarrow=False, textangle=-90, font=dict(size=9))
+                fig.add_annotation(x=anno, y=df_dpil["valore"].max() * 0.9, text=label, showarrow=False, textangle=-90, font={"size": 9})
 
-        fig.update_layout(yaxis_title="Debito/PIL %", height=500, margin=dict(t=30))
+        fig.update_layout(yaxis_title="Debito/PIL %", height=500, margin={"t": 30})
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:
         st.line_chart(df_dpil.set_index("anno")["valore"])

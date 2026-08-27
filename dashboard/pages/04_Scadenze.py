@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import streamlit as st
 import pandas as pd
-from sources import query_scadenze, load_scadenze
+import streamlit as st
+from sources import load_scadenze
 
 st.title("⏰ Scadenze Debito")
 
@@ -71,7 +71,7 @@ try:
         xaxis_title="Mese Scadenza",
         yaxis_title="Importo (mld €)",
         height=400,
-        margin=dict(t=30),
+        margin={"t": 30},
     )
     st.plotly_chart(fig, use_container_width=True)
 except ImportError:

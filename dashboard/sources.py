@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import streamlit as st
-
 from lab_connectors.duckdb.queries import query_clean
 from lab_connectors.registry import load_registry
 

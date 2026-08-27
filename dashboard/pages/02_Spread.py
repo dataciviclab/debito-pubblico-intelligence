@@ -56,9 +56,9 @@ if selected:
                     x=pivot.index,
                     y=pivot[paese],
                     name=PAESI.get(paese, paese),
-                    line=dict(color=colors.get(paese, "#333"), width=2),
+                    line={"color": colors.get(paese, "#333"), "width": 2},
                 ))
-        fig.update_layout(yaxis_title="Rendimento 10Y (%)", height=500, margin=dict(t=30))
+        fig.update_layout(yaxis_title="Rendimento 10Y (%)", height=500, margin={"t": 30})
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:
         st.line_chart(pivot)
@@ -86,7 +86,7 @@ if not df_spread.empty:
             x=df_spread["mese"],
             y=df_spread["spread"],
             name="Spread BTP-Bund",
-            line=dict(color="#e74c3c", width=2),
+            line={"color": "#e74c3c", "width": 2},
             fill="tozeroy",
             fillcolor="rgba(231, 76, 60, 0.1)",
         ))
@@ -95,7 +95,7 @@ if not df_spread.empty:
             yaxis_title="Spread (punti base)",
             xaxis_title="Mese",
             height=400,
-            margin=dict(t=30),
+            margin={"t": 30},
         )
         st.plotly_chart(fig, use_container_width=True)
     except ImportError:

@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
-from sources import query_ocpi, query_debito_pil
+from sources import query_ocpi
 
 st.title("🇮🇹 Debito Pubblico Italiano")
 
@@ -69,7 +69,7 @@ if not df_dpil.empty:
         x=df_dpil["anno"],
         y=df_dpil["valore"],
         name="Debito/PIL",
-        line=dict(color="#1f77b4", width=2),
+        line={"color": "#1f77b4", "width": 2},
         fill="tozeroy",
         fillcolor="rgba(31,119,180,0.1)",
     ))
@@ -82,7 +82,7 @@ if not df_dpil.empty:
         yaxis_title="Debito/PIL %",
         xaxis_title="Anno",
         height=400,
-        margin=dict(t=30),
+        margin={"t": 30},
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -104,11 +104,11 @@ if not df_pil.empty and not df_debito.empty:
         x=df_debito["anno"],
         y=df_debito["valore"] / 1e3,
         name="Debito (mld €)",
-        line=dict(color="#e74c3c", width=2),
+        line={"color": "#e74c3c", "width": 2},
     ), secondary_y=True)
     fig.update_yaxes(title_text="PIL (mld €)", secondary_y=False)
     fig.update_yaxes(title_text="Debito (mld €)", secondary_y=True)
-    fig.update_layout(height=400, margin=dict(t=30))
+    fig.update_layout(height=400, margin={"t": 30})
     st.plotly_chart(fig, use_container_width=True)
 
 # ── Nota: composizione debito dettagliata → pagina Composizione ───
