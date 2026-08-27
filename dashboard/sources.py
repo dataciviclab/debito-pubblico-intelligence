@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import streamlit as st
+
 from lab_connectors.duckdb.queries import query_clean_flat
 from lab_connectors.registry import load_registry
 
@@ -11,45 +13,40 @@ PREFIX = "debito_pubblico_intelligence/"
 _registry = load_registry(Path(__file__).parent.parent / "registry" / "registry.json")
 
 
-def query_ocpi(sql: str, years: list[int] | None = None):
-    return query_clean_flat("ocpi_serie_storiche", sql, year=years[-1] if years else 2026, prefix=PREFIX)
+def _q(slug: str, sql: str, year: int = 2026):
+    return query_clean_flat(slug, sql, year=year, prefix=PREFIX)
 
 
-def query_debito_pil(sql: str):
-    return query_clean_flat("eurostat_debito_pil", sql, prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_ocpi(sql: str, year: int = 2026):
+    return _q("ocpi_serie_storiche", sql, year)
 
 
-def query_rendimento(sql: str):
-    return query_clean_flat("eurostat_rendimento_10y", sql, prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_debito_pil(sql: str, year: int = 2026):
+    return _q("eurostat_debito_pil", sql, year)
 
 
-def query_composizione(sql: str):
-    return query_clean_flat("mef_composizione", sql, prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_rendimento(sql: str, year: int = 2026):
+    return _q("eurostat_rendimento_10y", sql, year)
 
 
-def load_scadenze():
-    return query_clean_flat("mef_scadenze_isin", "SELECT * FROM clean_input", prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_composizione(sql: str, year: int = 2026):
+    return _q("mef_composizione", sql, year)
 
 
-def query_scadenze(sql: str):
-    return query_clean_flat("mef_scadenze_isin", sql, prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_scadenze(year: int = 2026):
+    return _q("mef_scadenze_isin", "SELECT * FROM clean_input", year)
 
 
-def load_titoli_12m():
-    return query_clean_flat("mef_titoli_12m", "SELECT * FROM clean_input", prefix=PREFIX)
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_scadenze(sql: str, year: int = 2026):
+    return _q("mef_scadenze_isin", sql, year)
 
 
-def load_vita_media():
-    return query_clean_flat("mef_vita_media", "SELECT * FROM clean_input", prefix=PREFIX)
-
-
-def query_vita_media(sql: str):
-    return query_clean_flat("mef_vita_media", sql, prefix=PREFIX)
-
-
-def query_fpi(sql: str):
-    return query_clean_flat("fpi_debito_pa", sql, prefix=PREFIX)
-
-
-def get_registry():
-    return _registry
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_fpi(sql: str, year: int = 2026):
+    return _q("fpi_debito_pa", sql, year)
