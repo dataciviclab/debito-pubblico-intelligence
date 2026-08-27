@@ -6,7 +6,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from lab_connectors.duckdb.queries import query_clean_flat
+from lab_connectors.duckdb.queries import query_clean
 from lab_connectors.registry import load_registry
 
 PREFIX = "debito_pubblico_intelligence/"
@@ -14,7 +14,7 @@ _registry = load_registry(Path(__file__).parent.parent / "registry" / "registry.
 
 
 def _q(slug: str, sql: str, year: int = 2026):
-    return query_clean_flat(slug, sql, year=year, prefix=PREFIX)
+    return query_clean(slug, sql, [year], prefix=PREFIX)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
