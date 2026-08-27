@@ -35,11 +35,13 @@ col3.metric("📊 BTP (tutte)", f"{btp/totale*100:.1f}%")
 # ── Treemap ───────────────────────────────────────────────────────
 st.subheader("Composizione per Tipo Titolo")
 
+df_treemap = df[df["tipologia"] != "Totale"]
+
 try:
     import plotly.express as px
 
     fig = px.treemap(
-        df,
+        df_treemap,
         path=["tipologia"],
         values="valore_mln_eur",
         title="Debito per Tipologia Titolo (€ mln)",
@@ -52,11 +54,12 @@ except ImportError:
 # ── Tabella dettaglio ────────────────────────────────────────────
 st.subheader("Dettaglio")
 
-df["pct"] = (df["valore_mln_eur"] / totale * 100).round(1)
-df["valore_mld"] = (df["valore_mln_eur"] / 1e3).round(1)
+df_display = df[df["tipologia"] != "Totale"].copy()
+df_display["pct"] = (df_display["valore_mln_eur"] / totale * 100).round(1)
+df_display["valore_mld"] = (df_display["valore_mln_eur"] / 1e3).round(1)
 
 st.dataframe(
-    df[["tipologia", "valore_mld", "pct"]].rename(columns={
+    df_display[["tipologia", "valore_mld", "pct"]].rename(columns={
         "tipologia": "Tipologia",
         "valore_mld": "Valore (mld €)",
         "pct": "%",

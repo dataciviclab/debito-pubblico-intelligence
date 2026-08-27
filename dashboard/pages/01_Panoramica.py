@@ -32,7 +32,7 @@ row_pil = df_pil[df_pil["anno"] == latest].iloc[0] if not df_pil.empty else None
 col1, col2, col3, col4 = st.columns(4)
 col1.metric(
     "💰 Stock Debito",
-    f"€ {row_debito['valore']/1e6:,.0f} mld",
+    f"€ {row_debito['valore']/1e3:,.0f} mld",
     help=f"Dati al {latest}, fonte OCPI",
 )
 if row_dpil is not None:
@@ -96,13 +96,13 @@ if not df_pil.empty and not df_debito.empty:
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Bar(
         x=df_pil["anno"],
-        y=df_pil["valore"] / 1e6,
+        y=df_pil["valore"] / 1e3,
         name="PIL nominale (mld €)",
         marker_color="rgba(46, 204, 113, 0.5)",
     ), secondary_y=False)
     fig.add_trace(go.Scatter(
         x=df_debito["anno"],
-        y=df_debito["valore"] / 1e6,
+        y=df_debito["valore"] / 1e3,
         name="Debito (mld €)",
         line=dict(color="#e74c3c", width=2),
     ), secondary_y=True)
@@ -117,7 +117,7 @@ st.subheader(f"🧩 Composizione Debito — Snapshot {latest}")
 df_comp = query_composizione("""
     SELECT tipologia, valore_mln_eur
     FROM clean_input
-    WHERE colonna = 'mln. Euro'
+    WHERE colonna = 'mln. Euro' AND tipologia != 'Totale'
     ORDER BY valore_mln_eur DESC
 """)
 
