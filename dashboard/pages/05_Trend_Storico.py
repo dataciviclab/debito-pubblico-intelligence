@@ -126,7 +126,7 @@ st.subheader("Valori Recenti")
 df_tab = query_ocpi(f"""
     SELECT serie, nome, anno, valore
     FROM clean_input
-    WHERE serie IN ('{",".join(selected_serie if selected_serie else ["D"])}')
+    WHERE serie IN ('{"','".join(selected_serie if selected_serie else ["D"])}')
         AND anno >= {year_end - 5}
     ORDER BY anno, serie
 """)

@@ -25,9 +25,8 @@ df_emissioni = query_fpi(f"""
         SUBSTR(CAST(data AS VARCHAR), 1, 7) AS mese,
         SUM(valore_mln_eur) AS emissioni_mln
     FROM clean_input
-    WHERE tavola = 'TCCE0125'
-        AND tavola_nome = 'fabbisogno_ap_strumenti'
-        AND codice = 'S13.F3'
+    WHERE tavola_nome = 'fabbisogno_ap_strumenti'
+        AND codice IN ('S13.F32', 'S13.F31')
         AND CAST(SUBSTR(CAST(data AS VARCHAR), 1, 4) AS INTEGER) BETWEEN {year_start} AND {year_end}
     GROUP BY mese
     ORDER BY mese
@@ -64,9 +63,8 @@ df_stock = query_fpi(f"""
         SUBSTR(CAST(data AS VARCHAR), 1, 7) AS mese,
         SUM(valore_mln_eur) AS stock_mln
     FROM clean_input
-    WHERE tavola = 'TCCE0025'
-        AND tavola_nome = 'debito_stock'
-        AND codice = 'S13.M41'
+    WHERE tavola_nome = 'debito_ap_sottosettori'
+        AND codice = 'S1311.MGD'
         AND CAST(SUBSTR(CAST(data AS VARCHAR), 1, 4) AS INTEGER) BETWEEN {year_start} AND {year_end}
     GROUP BY mese
     ORDER BY mese
@@ -103,9 +101,8 @@ df_fabb = query_fpi(f"""
         SUBSTR(CAST(data AS VARCHAR), 1, 7) AS mese,
         SUM(valore_mln_eur) AS fabbisogno_mln
     FROM clean_input
-    WHERE tavola = 'TCCE0125'
-        AND tavola_nome = 'fabbisogno_ap_strumenti'
-        AND codice = 'S13.B9N'
+    WHERE tavola_nome = 'fabbisogno_ap_strumenti'
+        AND codice = 'S13.FAB'
         AND CAST(SUBSTR(CAST(data AS VARCHAR), 1, 4) AS INTEGER) BETWEEN {year_start} AND {year_end}
     GROUP BY mese
     ORDER BY mese
