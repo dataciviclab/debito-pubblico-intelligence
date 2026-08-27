@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "debito-pubblico-intelligence",
   "source_repo": "dataciviclab/debito-pubblico-intelligence",
-  "updated_at": "2026-08-25",
+  "updated_at": "2026-08-27",
   "datasets": [
     {
       "slug": "eurostat_debito_pil",
@@ -612,12 +612,12 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122221Z_34d936cd",
+        "run_id": "20260827T140942Z_10a069c5",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
           "raw": 100,
-          "clean": 100,
+          "clean": 95,
           "mart": 100
         },
         "output_rows": {
@@ -627,12 +627,12 @@
         },
         "output_bytes": {
           "raw": 8683,
-          "clean": 1763,
+          "clean": 1798,
           "mart": 1789
         },
-        "started_at": "2026-08-25T12:22:21.438045+00:00",
-        "finished_at": "2026-08-25T12:22:22.496194+00:00",
-        "duration_seconds": 1.058
+        "started_at": "2026-08-27T14:09:42.786860+00:00",
+        "finished_at": "2026-08-27T14:09:44.368615+00:00",
+        "duration_seconds": 1.582
       }
     },
     {
@@ -643,12 +643,12 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122222Z_3984fc31",
+        "run_id": "20260827T140944Z_6109503d",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
           "raw": 100,
-          "clean": 100,
+          "clean": 95,
           "mart": 100
         },
         "output_rows": {
@@ -661,9 +661,9 @@
           "clean": 30814,
           "mart": 30814
         },
-        "started_at": "2026-08-25T12:22:22.549012+00:00",
-        "finished_at": "2026-08-25T12:22:24.421794+00:00",
-        "duration_seconds": 1.873
+        "started_at": "2026-08-27T14:09:44.422353+00:00",
+        "finished_at": "2026-08-27T14:09:46.762029+00:00",
+        "duration_seconds": 2.34
       }
     },
     {
@@ -674,7 +674,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122224Z_3f2f5b47",
+        "run_id": "20260827T140946Z_03aaa4a3",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -692,9 +692,9 @@
           "clean": 319054,
           "mart": 231611
         },
-        "started_at": "2026-08-25T12:22:24.478151+00:00",
-        "finished_at": "2026-08-25T12:22:27.879324+00:00",
-        "duration_seconds": 3.401
+        "started_at": "2026-08-27T14:09:46.817997+00:00",
+        "finished_at": "2026-08-27T14:09:51.513464+00:00",
+        "duration_seconds": 4.695
       }
     },
     {
@@ -705,7 +705,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122227Z_5a5c8f43",
+        "run_id": "20260827T140951Z_5d22242b",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -723,9 +723,9 @@
           "clean": 969,
           "mart": 964
         },
-        "started_at": "2026-08-25T12:22:27.960363+00:00",
-        "finished_at": "2026-08-25T12:22:30.662108+00:00",
-        "duration_seconds": 2.702
+        "started_at": "2026-08-27T14:09:51.596334+00:00",
+        "finished_at": "2026-08-27T14:09:55.166937+00:00",
+        "duration_seconds": 3.571
       }
     },
     {
@@ -736,7 +736,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122230Z_ed27db54",
+        "run_id": "20260827T140955Z_1041e175",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -754,9 +754,9 @@
           "clean": 10056,
           "mart": 11634
         },
-        "started_at": "2026-08-25T12:22:30.711791+00:00",
-        "finished_at": "2026-08-25T12:22:33.940887+00:00",
-        "duration_seconds": 3.229
+        "started_at": "2026-08-27T14:09:55.217473+00:00",
+        "finished_at": "2026-08-27T14:09:59.695563+00:00",
+        "duration_seconds": 4.478
       }
     },
     {
@@ -767,7 +767,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122234Z_8333d6c1",
+        "run_id": "20260827T140959Z_df4224a0",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -785,9 +785,9 @@
           "clean": 1076,
           "mart": 1089
         },
-        "started_at": "2026-08-25T12:22:34.002426+00:00",
-        "finished_at": "2026-08-25T12:22:36.100003+00:00",
-        "duration_seconds": 2.098
+        "started_at": "2026-08-27T14:09:59.756275+00:00",
+        "finished_at": "2026-08-27T14:10:02.161324+00:00",
+        "duration_seconds": 2.405
       }
     },
     {
@@ -798,7 +798,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122236Z_5d8dcdd2",
+        "run_id": "20260827T141002Z_a29d9e39",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -816,9 +816,9 @@
           "clean": 1210,
           "mart": 1220
         },
-        "started_at": "2026-08-25T12:22:36.148373+00:00",
-        "finished_at": "2026-08-25T12:22:37.651729+00:00",
-        "duration_seconds": 1.503
+        "started_at": "2026-08-27T14:10:02.212002+00:00",
+        "finished_at": "2026-08-27T14:10:04.133059+00:00",
+        "duration_seconds": 1.921
       }
     },
     {
@@ -829,7 +829,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20260825T122237Z_0f9ce2a5",
+        "run_id": "20260827T141004Z_239147fa",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -847,9 +847,9 @@
           "clean": 32617,
           "mart": 32634
         },
-        "started_at": "2026-08-25T12:22:37.700992+00:00",
-        "finished_at": "2026-08-25T12:22:41.770963+00:00",
-        "duration_seconds": 4.07
+        "started_at": "2026-08-27T14:10:04.182416+00:00",
+        "finished_at": "2026-08-27T14:10:07.104483+00:00",
+        "duration_seconds": 2.922
       }
     }
   ],
