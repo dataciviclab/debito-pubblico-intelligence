@@ -43,7 +43,7 @@ selected = st.multiselect(
 
 if selected:
     df_filtered = df[df["paese"].isin(selected)]
-    pivot = df_filtered.pivot(index="mese", columns="paese", values="renimento_pct") if "renimento_pct" in df_filtered.columns else df_filtered.pivot_table(index="mese", columns="paese", values="rendimento_pct")
+    pivot = df_filtered.pivot(index="mese", columns="paese", values="rendimento_pct")
 
     try:
         import plotly.graph_objects as go

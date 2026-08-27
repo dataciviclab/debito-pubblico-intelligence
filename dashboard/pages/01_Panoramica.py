@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
-from sources import query_ocpi, query_debito_pil, query_composizione
+from sources import query_ocpi, query_debito_pil
 
 st.title("🇮🇹 Debito Pubblico Italiano")
 
@@ -111,27 +111,5 @@ if not df_pil.empty and not df_debito.empty:
     fig.update_layout(height=400, margin=dict(t=30))
     st.plotly_chart(fig, use_container_width=True)
 
-# ── Composizione debito (snapshot) ────────────────────────────────
-st.subheader(f"🧩 Composizione Debito — Snapshot {latest}")
-
-df_comp = query_composizione("""
-    SELECT tipologia, valore_mln_eur
-    FROM clean_input
-    WHERE colonna = 'mln. Euro' AND tipologia != 'Totale'
-    ORDER BY valore_mln_eur DESC
-""")
-
-if not df_comp.empty:
-    try:
-        import plotly.express as px
-
-        fig = px.treemap(
-            df_comp,
-            path=["tipologia"],
-            values="valore_mln_eur",
-            title="Composizione per Tipo Titolo",
-        )
-        fig.update_layout(height=500)
-        st.plotly_chart(fig, use_container_width=True)
-    except ImportError:
-        st.bar_chart(df_comp.set_index("tipologia")["valore_mln_eur"] / 1e3)
+# ── Nota: composizione debito dettagliata → pagina Composizione ───
+st.info("🧩 Per la composizione dettagliata del debito, vedi la pagina **Composizione**.")

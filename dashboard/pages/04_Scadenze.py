@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
+import pandas as pd
 from sources import query_scadenze, load_scadenze
 
 st.title("⏰ Scadenze Debito")
@@ -46,7 +47,7 @@ cedola_media = df_filtered["cedola_pct"].dropna().mean()
 col1, col2, col3 = st.columns(3)
 col1.metric("💰 Totale in Scadenza", f"€ {totale/1e9:,.1f} mld")
 col2.metric("📋 Nr Titoli", f"{nr_titoli}")
-col3.metric("📈 Cedola Media", f"{cedola_media:.2f}%" if cedola_media == cedola_media else "—")
+col3.metric("📈 Cedola Media", f"{cedola_media:.2f}%" if pd.notna(cedola_media) else "—")
 
 # ── Maturity Wall per mese ───────────────────────────────────────
 st.subheader(f"Maturity Wall — {year_filter}")
