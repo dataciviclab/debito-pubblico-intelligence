@@ -1,10 +1,5 @@
 """Composizione Debito — Come è fatto il debito italiano."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 from sources import query_composizione
 
@@ -51,7 +46,7 @@ try:
         title="Debito per Tipologia Titolo (€ mln)",
     )
     fig.update_layout(height=500)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 except ImportError:
     st.bar_chart(df.set_index("tipologia")["valore_mln_eur"] / 1e3)
 
@@ -68,7 +63,7 @@ st.dataframe(
         "valore_mld": "Valore (mld €)",
         "pct": "%",
     }),
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
 )
 

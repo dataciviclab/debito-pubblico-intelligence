@@ -1,10 +1,5 @@
 """Flussi Banca d'Italia — FPI debito PA."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 from sources import query_fpi
 
@@ -51,7 +46,7 @@ if not df_emissioni.empty:
             height=400,
             margin={"t": 30},
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.bar_chart(df_emissioni.set_index("mese")["emissioni_mln"] / 1e3)
 
@@ -89,7 +84,7 @@ if not df_stock.empty:
             height=400,
             margin={"t": 30},
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.line_chart(df_stock.set_index("mese")["stock_mln"] / 1e3)
 
@@ -127,6 +122,6 @@ if not df_fabb.empty:
             height=400,
             margin={"t": 30},
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.bar_chart(df_fabb.set_index("mese")["fabbisogno_mln"] / 1e3)

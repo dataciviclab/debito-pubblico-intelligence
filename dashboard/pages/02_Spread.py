@@ -1,10 +1,5 @@
 """Spread BTP-Bund — Confronto rendimenti 10Y europei."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 from sources import query_rendimento
 
@@ -59,7 +54,7 @@ if selected:
                     line={"color": colors.get(paese, "#333"), "width": 2},
                 ))
         fig.update_layout(yaxis_title="Rendimento 10Y (%)", height=500, margin={"t": 30})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.line_chart(pivot)
 
@@ -97,7 +92,7 @@ if not df_spread.empty:
             height=400,
             margin={"t": 30},
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.line_chart(df_spread.set_index("mese")["spread"])
 

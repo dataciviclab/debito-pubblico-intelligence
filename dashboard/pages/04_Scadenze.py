@@ -1,10 +1,5 @@
 """Scadenze — Maturity wall e rollover del debito."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import pandas as pd
 import streamlit as st
 from sources import load_scadenze
@@ -73,7 +68,7 @@ try:
         height=400,
         margin={"t": 30},
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 except ImportError:
     st.bar_chart(df_mese.set_index("scadenza_mese")["totale"] / 1e9)
 
@@ -96,7 +91,7 @@ try:
         title=f"Scadenze {year_filter} per Tipo",
     )
     fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 except ImportError:
     st.bar_chart(df_tipo.set_index("tipo")["totale"] / 1e9)
 
@@ -107,4 +102,4 @@ df_display = df_filtered[["isin", "tipo", "emissione", "scadenza", "cedola_pct",
 df_display["circolante_mld"] = (df_display["circolante_riv_eur"] / 1e9).round(2)
 df_display = df_display.drop(columns=["circolante_riv_eur"])
 
-st.dataframe(df_display, use_container_width=True, hide_index=True)
+st.dataframe(df_display, width='stretch', hide_index=True)

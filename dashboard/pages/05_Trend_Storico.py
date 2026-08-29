@@ -1,10 +1,5 @@
 """Trend Storico — Dal 1861 a oggi: debito, PIL, saldo, interessi."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 from sources import query_ocpi
 
@@ -63,7 +58,7 @@ if selected_serie:
             height=500,
             margin={"t": 30},
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         for s in selected_serie:
             df = query_ocpi(f"""
@@ -116,7 +111,7 @@ if not df_dpil.empty:
                 fig.add_annotation(x=anno, y=df_dpil["valore"].max() * 0.9, text=label, showarrow=False, textangle=-90, font={"size": 9})
 
         fig.update_layout(yaxis_title="Debito/PIL %", height=500, margin={"t": 30})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except ImportError:
         st.line_chart(df_dpil.set_index("anno")["valore"])
 
@@ -133,4 +128,4 @@ df_tab = query_ocpi(f"""
 
 if not df_tab.empty:
     pivot = df_tab.pivot(index="anno", columns="nome", values="valore")
-    st.dataframe(pivot, use_container_width=True)
+    st.dataframe(pivot, width='stretch')

@@ -1,10 +1,5 @@
 """Panoramica — Visione d'insieme del debito pubblico italiano."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 import streamlit as st
 from sources import query_ocpi
 
@@ -84,7 +79,7 @@ if not df_dpil.empty:
         height=400,
         margin={"t": 30},
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ── PIL e Debito (doppio asse) ───────────────────────────────────
 st.subheader(f"PIL e Debito — {latest}")
@@ -109,7 +104,7 @@ if not df_pil.empty and not df_debito.empty:
     fig.update_yaxes(title_text="PIL (mld €)", secondary_y=False)
     fig.update_yaxes(title_text="Debito (mld €)", secondary_y=True)
     fig.update_layout(height=400, margin={"t": 30})
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ── Nota: composizione debito dettagliata → pagina Composizione ───
 st.info("🧩 Per la composizione dettagliata del debito, vedi la pagina **Composizione**.")
