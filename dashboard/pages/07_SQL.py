@@ -1,5 +1,7 @@
 """Query SQL — Interroga direttamente i dati del Debito Pubblico."""
 
+from pathlib import Path
+
 from lab_connectors.duckdb.sql_page import render_sql_query
 from lab_connectors.registry import load_registry
 from sources import PREFIX
