@@ -9,7 +9,7 @@ succederebbe al debito se le condizioni cambiassero.
 
 - **Copertura:** Italia, serie dal 1861 (Banca d'Italia FPI, mensile)
 - **Unità di analisi:** Amministrazioni Pubbliche, sottosettori, strumenti, detentori
-- **Output pubblico:** `data/reporting/panorama.md` — un foglio riassuntivo aggiornato a ogni run
+- **Dashboard:** [dcl-debito-pubblico.streamlit.app](https://dcl-debito-pubblico.streamlit.app/)
 
 ## Cosa risponde
 
@@ -23,7 +23,7 @@ spesso è una differenza legittima di definizione, a volte è un errore vero nei
 
 Esempi di cosa il sistema ha già rilevato:
 - **165 anni di storia**: Banca d'Italia e OCPI raccontano lo stesso debito, al decimale.
-- **Anomalia 1995**: Eurostat diverga dal 1995 — spiegata come cambio di definizione
+- **Anomalia 1995**: Eurostat diverge dal 1995 — spiegata come cambio di definizione
   (notifiche EDP), non errore.
 - **Doppio conteggio trovato e corretto**: il file scadenze del Tesoro elenca ogni
   titolo una volta per tranche; un parser ingenuo li somma due volte. Il fusion layer
@@ -33,6 +33,22 @@ Esempi di cosa il sistema ha già rilevato:
   scostamento tra costo "vero" a bilancio e stima interessi — la voce BDAP è più
   larga (include spese di emissione e voci di cassa) e si basa su previsioni, non
   su consuntivo.
+
+## Dashboard
+
+La dashboard Streamlit è la pagina pubblica del progetto. La home page (**Panorama**)
+unisce in un'unica vista:
+
+1. **Status board** — 9 KPI con soglie calibrate (debito/PIL, rendimento 10Y, spread, interessi, saldo primario, rollover, vita media, debito AP, Bd'Italia)
+2. **Affidabilità dati** — 8 riconciliazioni cross-fonte (FPI vs Eurostat, FPI vs OCPI, MEF vs FPI, fabbisogno vs stock, oneri BDAP vs OCPI, consuntivo vs OCPI, accensione vs fabbisogno)
+3. **Profilo temporale** — scadenze 12 anni + top 10 ISIN in circolazione
+4. **Scenari di sostenibilità** — slider interattivi per i, g, sp con 7 preset + scenario custom
+
+Le altre pagine: Spread BTP-Bund, Composizione titoli, Scadenze dettagliate, Trend Storico (1861–oggi), Flussi Banca d'Italia, Query SQL.
+
+```bash
+cd dashboard && streamlit run app.py
+```
 
 ## I segnali (cosa osserviamo)
 
@@ -46,20 +62,30 @@ Il sistema accende spie su cinque dimensioni, tutte da dati ufficiali:
 | **Rollover 12m** | quanto debito va rimborsato entro 12 mesi | ~360 mld (12,7%) |
 | **Spread BTP-Bund** | quanto il mercato ci fa pagare in più della Germania | ~0,8 pp |
 
-## Scenari di sostenibilità
-
-Partendo dall'ultimo valore reale del debito/PIL, il sistema proietta la traiettoria
-a 5 anni sotto ipotesi diverse su costo del debito (i), crescita (g) e avanzo
-primario (sp), usando l'identità di sostenibilità:
+## Come funziona
 
 ```
-d(t+1) = d(t)·(1+i)/(1+g) − sp
+toolkit (fetch→clean→mart) → reconcile → dashboard
 ```
 
-Risultato chiave (base 2025, 137,1%): **lo stato attuale è quasi stabile** (−1,2pp in
-5 anni); la **crescita debole** (+9,7pp) e i **tassi alti** (+3pp) lo farebbero salire;
-un **avanzo primario al 3%** (−12,8pp) è la leva sotto controllo politico con effetto
-maggiore. Non previsioni, ma sensibilità: "cosa cambia se...".
+```bash
+make run-all          # toolkit: fetch/clean/mart per tutti i dataset
+make reconcile        # fusion layer: riconciliazione cross-fonte + summary.json
+make test             # pytest: verifica integrità layer
+```
+
+**Toolkit** — i dataset Eurostat, FPI, OCPI, MEF sono gestiti da `datasets/*/dataset.yml`:
+ogni dataset definisce source → clean SQL → mart SQL. Il toolkit produce parquet in `out/data/`.
+
+**Fusion layer** — `scripts/reconcile.py` confronta le fonti tra loro e produce:
+- CSV dettagliati in `data/reconcile/` (per-anno, per-mese)
+- `data/reconcile/summary.json` (riepilogo per la dashboard)
+
+**Dashboard** — legge direttamente dai mart (KPI, scadenze, ISIN) e da `summary.json`
+(riconciliazioni). Gli scenari sono calcolati on-the-fly.
+
+**BDAP** — `scripts/bdap.py` legge da dataset GCS esterni (entrate/spese Stato,
+consuntivo pagamenti) e produce CSV per il fusion layer.
 
 ## Fonti
 
@@ -73,28 +99,6 @@ maggiore. Non previsioni, ma sensibilità: "cosa cambia se...".
 | BDAP Stato (MEF-RGS) | entrate e spese dello Stato per titolo/missione/macroaggregato (via catalogo GCS) |
 
 Tutte le fonti sono pubbliche e verificabili.
-
-## Come funziona
-
-```
-toolkit run (fetch→clean→mart) → reconcile → signals → scenario → panorama
-```
-
-```bash
-make all              # toolkit + analitici + test
-make run-all          # solo toolkit (fetch/clean/mart per tutti i dataset)
-make reconcile        # fusion layer (riconciliazione cross-fonte)
-make signals          # segnali con soglie
-make scenario         # scenari di sostenibilità
-make panorama         # genera data/reporting/panorama.md + .json
-make test             # pytest (verifica integrità layer)
-```
-
-I datasetEurostat sono gestiti dal **toolkit** (`datasets/*/dataset.yml`). Le fonti
-custom (FPI, OCPI, MEF, BDAP) usano script Python che producono CSV/parquet, poi
-il toolkit gestisce clean→mart. Il **fusion layer** confronta le fonti tra loro.
-I **segnali** calcolano gli indicatori con soglie esplicite. Gli **scenari**
-proiettano la traiettoria del debito/PIL. Tutto converge nel **panorama**.
 
 ## Trasparenza e limiti
 
