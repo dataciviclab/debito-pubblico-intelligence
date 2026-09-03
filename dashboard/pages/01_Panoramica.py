@@ -1,110 +1,441 @@
-"""Panoramica — Visione d'insieme del debito pubblico italiano."""
+"""Panoramica — Control room del debito pubblico italiano.
 
+Sezione 1: Status Board (KPI con soglie)
+Sezione 2: Affidabilità dei dati (riconciliazione cross-fonte)
+Sezione 3: Profilo temporale (scadenze 12 anni + top ISIN)
+Sezione 4: What-if scenari (slider interattivi)
+"""
+
+from datetime import date
+from pathlib import Path
+
+import duckdb
 import streamlit as st
-from sources import query_ocpi
+from sources import query_ocpi, query_scadenze
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+MART = ROOT / "out" / "data" / "mart"
+RECON_DIR = ROOT / "data" / "reconcile"
+
+st.set_page_config(page_title="Debito Pubblico · Dashboard", page_icon="🇮🇹", layout="wide")
+
+# ═══════════════════════════════════════════════════════════════════
+# SEZIONE 1 — STATUS BOARD
+# ═══════════════════════════════════════════════════════════════════
 
 st.title("🇮🇹 Debito Pubblico Italiano")
+st.caption(f"Aggiornato al {date.today().isoformat()} · Fonti: Banca d'Italia, Eurostat, OCPI, MEF Tesoro")
 
-# ── KPI da OCPI ───────────────────────────────────────────────────
-df_debito = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'C' ORDER BY anno")
-df_dpil = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'D' ORDER BY anno")
-df_interessi = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'I' ORDER BY anno")
-df_saldo = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'G' ORDER BY anno")
-df_pil = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'B' ORDER BY anno")
 
-if df_debito.empty:
-    st.warning("Nessun dato disponibile.")
+@st.cache_data(ttl=3600, show_spinner=False)
+def _load_signals():
+    """5 KPI principali da mart diretti."""
+    euro_dp = str(MART / "eurostat_debito_pil/2026/mart_debito_pil.parquet")
+    euro_r10 = str(MART / "eurostat_rendimento_10y/2026/mart_rendimento_10y.parquet")
+    mef_scad = str(MART / "mef_scadenze_isin/2026/mart_scadenze_isin.parquet")
+
+    con = duckdb.connect()
+    q = {
+        "debito_pil": f"SELECT debito_pil_pct FROM read_parquet('{euro_dp}') WHERE settore='S13' ORDER BY anno DESC LIMIT 1",
+        "rendimento_10y": f"SELECT rendimento_pct FROM read_parquet('{euro_r10}') WHERE paese='IT' ORDER BY mese DESC LIMIT 1",
+        "spread": (
+            f"WITH it AS (SELECT rendimento_pct r FROM read_parquet('{euro_r10}') WHERE paese='IT' ORDER BY mese DESC LIMIT 1), "
+            f"de AS (SELECT rendimento_pct r FROM read_parquet('{euro_r10}') WHERE paese='DE' ORDER BY mese DESC LIMIT 1) "
+            "SELECT round(it.r - de.r, 2) FROM it, de"
+        ),
+        "rollover_12m": (
+            f"WITH t AS (SELECT sum(circolante_nom_eur) tot FROM read_parquet('{mef_scad}') WHERE scadenza >= data_ref), "
+            f"r AS (SELECT sum(circolante_nom_eur) r12 FROM read_parquet('{mef_scad}') "
+            "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)) "
+            "SELECT round(r12 / tot * 100, 1) FROM t, r"
+        ),
+    }
+    sig = {}
+    try:
+        for k, sql in q.items():
+            try:
+                row = con.execute(sql).fetchone()
+                if row and row[0] is not None:
+                    sig[k] = float(row[0])
+            except Exception:
+                pass
+    finally:
+        con.close()
+
+    # KPI da OCPI (clean layer, via sources)
+    try:
+        df_dpil = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'D' ORDER BY anno DESC LIMIT 2")
+        if not df_dpil.empty:
+            sig["debito_pil_ocpi"] = float(df_dpil.iloc[0]["valore"])
+            if len(df_dpil) > 1:
+                sig["debito_pil_delta"] = float(df_dpil.iloc[0]["valore"] - df_dpil.iloc[1]["valore"])
+        df_i = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'I' ORDER BY anno DESC LIMIT 1")
+        if not df_i.empty:
+            sig["interessi_pil"] = float(df_i.iloc[0]["valore"])
+        df_g = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'G' ORDER BY anno DESC LIMIT 1")
+        if not df_g.empty:
+            sig["saldo_pil"] = float(df_g.iloc[0]["valore"])
+    except Exception:
+        pass
+
+    return sig
+
+
+sig = _load_signals()
+
+if not sig:
+    st.warning("Dati non disponibili. Esegui `make run-all` per generare i mart.")
     st.stop()
 
-# Ultimo anno con dati
-latest = int(df_debito["anno"].max())
-row_debito = df_debito[df_debito["anno"] == latest].iloc[0]
-row_dpil = df_dpil[df_dpil["anno"] == latest].iloc[0] if not df_dpil.empty else None
-row_interessi = df_interessi[df_interessi["anno"] == latest].iloc[0] if not df_interessi.empty else None
-row_saldo = df_saldo[df_saldo["anno"] == latest].iloc[0] if not df_saldo.empty else None
-row_pil = df_pil[df_pil["anno"] == latest].iloc[0] if not df_pil.empty else None
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric(
-    "💰 Stock Debito",
-    f"€ {row_debito['valore']/1e3:,.0f} mld",
-    help=f"Dati al {latest}, fonte OCPI",
-)
-if row_dpil is not None:
-    delta = None
-    if len(df_dpil) > 1:
-        prev = df_dpil[df_dpil["anno"] == latest - 1]
-        if not prev.empty:
-            delta = f"{row_dpil['valore'] - prev.iloc[0]['valore']:+.1f}%"
-    col2.metric(
-        "📊 Debito/PIL",
-        f"{row_dpil['valore']:.1f}%",
-        delta=delta,
-        help="Soglia Maastricht: 60%",
-    )
-if row_interessi is not None:
-    col3.metric(
-        "💸 Interessi/PIL",
-        f"{row_interessi['valore']:.2f}%",
-    )
-if row_saldo is not None:
-    col4.metric(
-        "⚖️ Saldo Primario/PIL",
-        f"{row_saldo['valore']:+.2f}%",
-    )
+def _color_threshold(val, threshold, orient="high_bad"):
+    """Restituisce 'normal' o 'bad'."""
+    if orient == "high_bad" and val > threshold:
+        return "bad"
+    if orient == "low_bad" and val < threshold:
+        return "bad"
+    return "normal"
 
-# ── Debito/PIL con soglia Maastricht ──────────────────────────────
-st.subheader(f"Debito/PIL — Storico (1861–{latest})")
 
-if not df_dpil.empty:
-    import plotly.graph_objects as go
+# Riga KPI principali
+k1, k2, k3, k4, k5 = st.columns(5)
 
-    fig = go.Figure()
+with k1:
+    v = sig.get("debito_pil_ocpi", sig.get("debito_pil", 0))
+    d = sig.get("debito_pil_delta")
+    st.metric("Debito/PIL", f"{v:.1f}%", delta=f"{d:+.1f}%" if d else None,
+              delta_color="inverse" if _color_threshold(v, 130) == "bad" else "normal",
+              help="Soglia Maastricht: 60%")
+
+with k2:
+    v = sig.get("rendimento_10y", 0)
+    st.metric("Rendimento 10Y", f"{v:.2f}%",
+              help="BTP Italia 10 anni")
+
+with k3:
+    v = sig.get("spread", 0)
+    c = _color_threshold(v, 2)
+    st.metric("Spread BTP-Bund", f"{v:.2f} pp",
+              delta_color="inverse" if c == "bad" else "normal",
+              help="Soglia: >2 pp = pressione mercato")
+
+with k4:
+    v = sig.get("interessi_pil", 0)
+    st.metric("Interessi/PIL", f"{v:.2f}%",
+              help="Spesa per interessi / PIL")
+
+with k5:
+    v = sig.get("saldo_pil", 0)
+    st.metric("Saldo Primario/PIL", f"{v:+.1f}%",
+              delta_color="inverse" if _color_threshold(v, 0, "low_bad") == "bad" else "normal",
+              help="<0 = nuovo debito per gestione")
+
+# Riga KPI secondari
+k6, k7, k8, k9 = st.columns(4)
+
+with k6:
+    v = sig.get("rollover_12m", 0)
+    c = _color_threshold(v, 15)
+    st.metric("Rollover 12m", f"{v:.1f}%",
+              delta_color="inverse" if c == "bad" else "normal",
+              help="% debito in scadenza nei prossimi 12 mesi")
+
+with k7:
+    # Vita media da mart
+    try:
+        con = duckdb.connect()
+        vm_path = str(MART / "mef_vita_media/2026/mart_vita_media.parquet")
+        row = con.execute(f"SELECT round(max(vita_media_mesi)/12.0, 1) FROM read_parquet('{vm_path}') WHERE tipologia='TOTALE'").fetchone()
+        con.close()
+        v = float(row[0]) if row else 0
+        c = _color_threshold(v, 5, "low_bad")
+        st.metric("Vita Media", f"{v:.1f} anni",
+                  delta_color="inverse" if c == "bad" else "normal",
+                  help="<5 anni = durata corta")
+    except Exception:
+        st.metric("Vita Media", "—")
+
+with k8:
+    # Debito totale da FPI
+    try:
+        con = duckdb.connect()
+        ap_path = str(MART / "fpi_debito_pa/2026/mart_debito_ap.parquet")
+        row = con.execute(f"SELECT valore_mln_eur FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1").fetchone()
+        con.close()
+        v = float(row[0]) if row else 0
+        st.metric("Debito AP", f"€ {v/1e3:,.0f} mld",
+                  help="Stock debito Amministrazioni Pubbliche")
+    except Exception:
+        st.metric("Debito AP", "—")
+
+with k9:
+    # Bd'Italia detiene %
+    try:
+        con = duckdb.connect()
+        det_path = str(MART / "fpi_debito_pa/2026/mart_detentori.parquet")
+        ap_path = str(MART / "fpi_debito_pa/2026/mart_debito_ap.parquet")
+        row = con.execute(f"""
+            SELECT round(
+                (SELECT valore_mln_eur FROM read_parquet('{det_path}') WHERE codice='S13.MGD.S121' AND data=(SELECT max(data) FROM read_parquet('{det_path}') WHERE codice='S13.MGD.S121'))
+                / (SELECT valore_mln_eur FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' AND data=(SELECT max(data) FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD')) * 100, 1)
+        """).fetchone()
+        con.close()
+        v = float(row[0]) if row else 0
+        st.metric("Bd'Italia detiene", f"{v:.1f}%",
+                  help="% debito AP detenuto da Banca d'Italia")
+    except Exception:
+        st.metric("Bd'Italia detiene", "—")
+
+st.divider()
+
+# ═══════════════════════════════════════════════════════════════════
+# SEZIONE 2 — AFFIDABILITÀ DEI DATI
+# ═══════════════════════════════════════════════════════════════════
+
+st.header("2. Affidabilità dei dati")
+st.caption("Confronto cross-fonte: lo stesso concetto visto da fonti diverse")
+
+# Carica summary.json prodotto da reconcile.py
+summary_path = ROOT / "data" / "reconcile" / "summary.json"
+if summary_path.exists():
+    import json
+    with open(summary_path, encoding="utf-8") as f:
+        recon_summary = json.load(f)
+else:
+    recon_summary = []
+
+if recon_summary:
+    # Checklist visiva — auto-generata da summary.json
+    cols = st.columns(2)
+    for i, item in enumerate(recon_summary):
+        with cols[i % 2]:
+            n_anom = item.get("n_anomalie", 0)
+            tipo = item.get("tipo", "confronto")
+
+            # Icona in base al tipo e alle anomalie
+            if tipo == "indicatore":
+                icona = "ℹ️"
+            elif n_anom == 0:
+                icona = "✅"
+            elif n_anom <= 2:
+                icona = "⚠️"
+            else:
+                icona = "🔴"
+
+            periodo = item.get("periodo", "")
+            dettaglio = item.get("anomalie_dettaglio", "")
+            st.markdown(f"{icona} **{item['nome']}** ({periodo})")
+            if dettaglio:
+                st.caption(dettaglio)
+
+    # CSV dettagliati
+    recon_files = sorted(RECON_DIR.glob("reconcile_*.csv")) if RECON_DIR.exists() else []
+    if recon_files:
+        with st.expander("Dettagli CSV"):
+            import pandas as pd
+            for f in recon_files:
+                if f.name == "summary.json":
+                    continue
+                st.markdown(f"**{f.stem.replace('reconcile_', '').replace('_', ' ').title()}**")
+                try:
+                    st.dataframe(pd.read_csv(f), use_container_width=True, hide_index=True)
+                except Exception as e:
+                    st.error(f"Errore: {e}")
+else:
+    st.info("Riconciliazione non disponibile. Esegui `make reconcile` per generare i dati.")
+
+st.divider()
+
+# ═══════════════════════════════════════════════════════════════════
+# SEZIONE 3 — PROFILO TEMPORALE
+# ═══════════════════════════════════════════════════════════════════
+
+st.header("3. Profilo temporale")
+
+col_left, col_right = st.columns([2, 1])
+
+with col_left:
+    st.subheader("Scadenze 12 anni")
+    try:
+        df_scad = query_scadenze("""
+            SELECT cast(year(scadenza) AS INT) AS anno,
+                   round(sum(circolante_nom_eur)/1e6, 0) AS mln_eur
+            FROM clean_input
+            WHERE scadenza >= data_ref
+            GROUP BY 1 ORDER BY 1
+            LIMIT 12
+        """)
+
+        if not df_scad.empty:
+            import plotly.graph_objects as go
+
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=df_scad["anno"].astype(str),
+                y=df_scad["mln_eur"],
+                marker_color="#1f77b4",
+                text=df_scad["mln_eur"].apply(lambda x: f"€{x:,.0f}"),
+                textposition="outside",
+            ))
+            fig.update_layout(
+                xaxis_title="Anno",
+                yaxis_title="mln EUR",
+                height=350,
+                margin={"t": 20, "b": 40},
+            )
+            st.plotly_chart(fig, width="stretch")
+        else:
+            st.warning("Nessuna scadenza trovata.")
+    except Exception as e:
+        st.error(f"Errore: {e}")
+
+with col_right:
+    st.subheader("Top 10 ISIN")
+    try:
+        df_isin = query_scadenze("""
+            SELECT isin, tipo,
+                   round(circolante_nom_eur/1e6, 0) AS mln
+            FROM clean_input
+            WHERE scadenza >= data_ref
+            ORDER BY circolante_nom_eur DESC
+            LIMIT 10
+        """)
+        if not df_isin.empty:
+            st.dataframe(df_isin, use_container_width=True, hide_index=True)
+    except Exception as e:
+        st.error(f"Errore: {e}")
+
+st.divider()
+
+# ═══════════════════════════════════════════════════════════════════
+# SEZIONE 4 — WHAT-IF SCENARI
+# ═══════════════════════════════════════════════════════════════════
+
+st.header("4. Scenari di sostenibilità")
+st.caption("d(t+1) = d(t) · (1+i)/(1+g) − sp ·  dove i=tasso interesse, g=crescita nominale, sp=saldo primario")
+
+
+def _project(d0, i, g, sp, years):
+    d = d0 / 100.0
+    path = [round(d * 100, 1)]
+    for _ in range(years):
+        d = d * (1 + i / 100) / (1 + g / 100) - sp / 100
+        path.append(round(d * 100, 1))
+    return path
+
+
+# Base: ultimo OCPI debito/PIL
+try:
+    df_base = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'D' ORDER BY anno DESC LIMIT 1")
+    anno_base = int(df_base.iloc[0]["anno"])
+    d0 = float(df_base.iloc[0]["valore"])
+except Exception:
+    anno_base, d0 = 2024, 137.0
+
+HORIZON = 5
+
+# Ipotesi preset: (nome, i%, g%, sp%)
+SCEN_PRESETS = [
+    ("stato_attuale", 2.89, 2.54, 0.7),
+    ("crescita_forte", 2.89, 3.50, 0.7),
+    ("crescita_debole", 2.89, 1.00, 0.7),
+    ("tassi_alti", 3.50, 2.54, 0.7),
+    ("avanzo_primario_2", 2.89, 2.54, 2.0),
+    ("avanzo_primario_3", 2.89, 2.54, 3.0),
+    ("stress", 3.50, 1.00, 0.0),
+]
+
+SCEN_COLORS = {
+    "stato_attuale": "#1f77b4",
+    "crescita_forte": "#2ecc71",
+    "crescita_debole": "#e67e22",
+    "tassi_alti": "#e74c3c",
+    "avanzo_primario_2": "#9b59b6",
+    "avanzo_primario_3": "#8e44ad",
+    "stress": "#c0392b",
+}
+
+
+def _project(d0, i, g, sp, years):
+    """Proietta debito/PIL: d(t+1) = d(t)·(1+i)/(1+g) − sp."""
+    d = d0 / 100.0
+    path = [round(d * 100, 1)]
+    for _ in range(years):
+        d = d * (1 + i / 100) / (1 + g / 100) - sp / 100
+        path.append(round(d * 100, 1))
+    return path
+
+# Slider
+col1, col2, col3 = st.columns(3)
+with col1:
+    i_custom = st.slider("Tasso interesse (i) %", 0.0, 8.0, 2.89, 0.01)
+with col2:
+    g_custom = st.slider("Crescita nominale (g) %", 0.0, 8.0, 2.54, 0.01)
+with col3:
+    sp_custom = st.slider("Saldo primario (sp) % PIL", -5.0, 5.0, 0.7, 0.1)
+
+horizon = 5
+years = list(range(anno_base, anno_base + horizon + 1))
+
+import plotly.graph_objects as go
+
+# Calcola traiettorie preset on-the-fly
+preset_paths = {nome: _project(d0, i, g, sp, HORIZON) for nome, i, g, sp in SCEN_PRESETS}
+
+fig = go.Figure()
+
+# Preset (tratteggiati, opachi)
+for nome, i, g, sp in SCEN_PRESETS:
     fig.add_trace(go.Scatter(
-        x=df_dpil["anno"],
-        y=df_dpil["valore"],
-        name="Debito/PIL",
-        line={"color": "#1f77b4", "width": 2},
-        fill="tozeroy",
-        fillcolor="rgba(31,119,180,0.1)",
+        x=years,
+        y=preset_paths[nome],
+        name=nome.replace("_", " ").title(),
+        line={"color": SCEN_COLORS.get(nome, "#95a5a6"), "width": 1.5, "dash": "dot"},
+        opacity=0.5,
     ))
-    fig.add_hline(
-        y=60, line_dash="dash", line_color="red",
-        annotation_text="Maastricht 60%",
-        annotation_position="top left",
-    )
-    fig.update_layout(
-        yaxis_title="Debito/PIL %",
-        xaxis_title="Anno",
-        height=400,
-        margin={"t": 30},
-    )
-    st.plotly_chart(fig, width='stretch')
 
-# ── PIL e Debito (doppio asse) ───────────────────────────────────
-st.subheader(f"PIL e Debito — {latest}")
+# Custom (solido, spesso)
+path_custom = _project(d0, i_custom, g_custom, sp_custom, HORIZON)
+fig.add_trace(go.Scatter(
+    x=years,
+    y=path_custom,
+    name="Custom",
+    line={"color": "#2c3e50", "width": 3},
+))
 
-if not df_pil.empty and not df_debito.empty:
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+fig.add_hline(y=60, line_dash="dash", line_color="red", opacity=0.3, annotation_text="Maastricht 60%")
+fig.update_layout(
+    xaxis_title="Anno",
+    yaxis_title="Debito/PIL %",
+    height=450,
+    margin={"t": 20},
+    legend={"orientation": "h", "yanchor": "bottom", "y": -0.25},
+)
+st.plotly_chart(fig, width="stretch")
 
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Bar(
-        x=df_pil["anno"],
-        y=df_pil["valore"] / 1e3,
-        name="PIL nominale (mld €)",
-        marker_color="rgba(46, 204, 113, 0.5)",
-    ), secondary_y=False)
-    fig.add_trace(go.Scatter(
-        x=df_debito["anno"],
-        y=df_debito["valore"] / 1e3,
-        name="Debito (mld €)",
-        line={"color": "#e74c3c", "width": 2},
-    ), secondary_y=True)
-    fig.update_yaxes(title_text="PIL (mld €)", secondary_y=False)
-    fig.update_yaxes(title_text="Debito (mld €)", secondary_y=True)
-    fig.update_layout(height=400, margin={"t": 30})
-    st.plotly_chart(fig, width='stretch')
+# Tabella riepilogativa
+import pandas as pd
 
-# ── Nota: composizione debito dettagliata → pagina Composizione ───
-st.info("🧩 Per la composizione dettagliata del debito, vedi la pagina **Composizione**.")
+rows = []
+for nome, i, g, sp in SCEN_PRESETS:
+    traj = preset_paths[nome]
+    rows.append({
+        "Scenario": nome.replace("_", " ").title(),
+        "i %": f"{i:.2f}",
+        "g %": f"{g:.2f}",
+        "sp %": f"{sp:+.1f}",
+        "Start": f"{traj[0]:.1f}%",
+        "End": f"{traj[-1]:.1f}%",
+        "Δ": f"{traj[-1] - traj[0]:+.1f} pp",
+    })
+rows.append({
+    "Scenario": "**Custom**",
+    "i %": f"{i_custom:.2f}",
+    "g %": f"{g_custom:.2f}",
+    "sp %": f"{sp_custom:+.1f}",
+    "Start": f"{path_custom[0]:.1f}%",
+    "End": f"{path_custom[-1]:.1f}%",
+    "Δ": f"{path_custom[-1] - path_custom[0]:+.1f} pp",
+})
+
+st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)

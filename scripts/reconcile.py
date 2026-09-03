@@ -48,6 +48,7 @@ costituire riserve di liquidità. Perimetro: BDAP Stato vs FPI tutte le AP.
 """
 
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -59,6 +60,7 @@ from datasets._shared.paths import (
     MART_FPI_FAB,
     MART_MEF_COMP,
     MART_MEF_SCAD,
+    MART_MEF_T12,
     MART_OCPI,
     RECON_DIR,
 )
@@ -112,7 +114,16 @@ def _compare(con, name, fpi_dic, other_rows, out_path):
     if report:
         last = report[-1]
         print(f"[reconcile] ultimo anno ({last['anno']}): delta {last['delta_pct']:+.2f}%")
-    return report
+
+    # Genera dettaglio anomalie per summary
+    anom_detail = ", ".join(f"{a['anno']} (delta {a['delta_pct']:+.2f}%)" for a in anomalies[:5])
+    periodo = f"{report[0]['anno']}–{report[-1]['anno']}" if report else "?"
+    return {
+        "n_confrontati": len(report),
+        "n_anomalie": len(anomalies),
+        "anomalie_dettaglio": anom_detail,
+        "periodo": periodo,
+    }
 
 
 def run():
@@ -123,6 +134,7 @@ def run():
 
     RECON_DIR.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect()
+    summary = []
 
     fpi_dic = _read_fpi_december(con)
 
@@ -131,7 +143,18 @@ def run():
         SELECT anno, stock_mln_eur FROM read_parquet('out/data/mart/eurostat_debito_pil/2026/mart_debito_pil.parquet')
         WHERE settore = 'S13' ORDER BY anno
     """).fetchall()
-    _compare(con, "eurostat", fpi_dic, eur_rows, RECON_DIR / "reconcile_fpi_vs_eurostat.csv")
+    s1 = _compare(con, "eurostat", fpi_dic, eur_rows, RECON_DIR / "reconcile_fpi_vs_eurostat.csv")
+    summary.append({
+        "id": "fpi_vs_eurostat",
+        "nome": "FPI vs Eurostat",
+        "fonti": "Banca d'Italia FPI, Eurostat gov_10dd_edpt1",
+        "periodo": s1["periodo"],
+        "tipo": "confronto",
+        "n_confrontati": s1["n_confrontati"],
+        "n_anomalie": s1["n_anomalie"],
+        "anomalie_dettaglio": s1["anomalie_dettaglio"],
+        "csv": "reconcile_fpi_vs_eurostat.csv",
+    })
 
     if MART_OCPI.exists():
         print("\n=== CASO 2: FPI vs OCPI (serie C 'Debito') ===")
@@ -139,7 +162,18 @@ def run():
             SELECT anno, valore FROM read_parquet('out/data/mart/ocpi_serie_storiche/2026/mart_serie_storiche.parquet')
             WHERE serie = 'C' ORDER BY anno
         """).fetchall()
-        _compare(con, "ocpi", fpi_dic, ocpi_rows, RECON_DIR / "reconcile_fpi_vs_ocpi.csv")
+        s2 = _compare(con, "ocpi", fpi_dic, ocpi_rows, RECON_DIR / "reconcile_fpi_vs_ocpi.csv")
+        summary.append({
+            "id": "fpi_vs_ocpi",
+            "nome": "FPI vs OCPI",
+            "fonti": "Banca d'Italia FPI, MEF OCPI",
+            "periodo": s2["periodo"],
+            "tipo": "confronto",
+            "n_confrontati": s2["n_confrontati"],
+            "n_anomalie": s2["n_anomalie"],
+            "anomalie_dettaglio": s2["anomalie_dettaglio"],
+            "csv": "reconcile_fpi_vs_ocpi.csv",
+        })
     else:
         print("\n[reconcile] ocpi non disponibile (skip caso 2)")
     mef_comp_parquet = str(MART_MEF_COMP) if MART_MEF_COMP.exists() else None
@@ -184,13 +218,24 @@ def run():
         n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{MART_MEF_SCAD!s}')").fetchall()
         n_isin = n_isin_rows[0][0] if n_isin_rows else 0
         print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione")
+
+        if ratio is not None:
+            summary.append({
+                "id": "mef_vs_fpi_titoli",
+                "nome": "MEF titoli vs FPI titoli",
+                "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
+                "periodo": str(fpi_f3[0][0])[:7] if fpi_f3 else "?",
+                "tipo": "rapporto",
+                "rapporto_pct": round(ratio, 1),
+                "n_anomalie": 0 if 95 <= ratio <= 105 else 1,
+                "anomalie_dettaglio": f"rapporto {ratio:.1f}%",
+                "csv": "reconcile_mef_vs_fpi.csv",
+            })
     else:
         print("\n[reconcile] mef non disponibile (skip caso 3)")
 
     # CASO 4: MEF titoli-12m (ufficiale) vs nostro rollover ISIN-level
-    t12 = ROOT / "data" / "build" / "mef_titoli_12m.parquet"
-    scad = ROOT / "data" / "build" / "mef_scadenze.parquet"
-    if t12.exists() and scad.exists():
+    if MART_MEF_T12.exists() and MART_MEF_SCAD.exists():
         print("\n=== CASO 4: MEF titoli-12m (ufficiale) vs rollover ISIN-level ===")
         import csv as _csv
 
@@ -244,6 +289,22 @@ def run():
                             r["delta_mln_eur"], r["delta_pct"], r["anomalia"]])
         print(f"[reconcile] OK {out}")
 
+        if report:
+            mese_min = report[0]["mese"]
+            mese_max = report[-1]["mese"]
+            anom_mesi = [r["mese"] for r in report if r["anomalia"] == "SI"]
+            summary.append({
+                "id": "titoli12m_vs_isin",
+                "nome": "MEF titoli-12m vs rollover ISIN",
+                "fonti": "MEF Tesoro titoli-12m, MEF Tesoro ISIN-level",
+                "periodo": f"{mese_min}–{mese_max}",
+                "tipo": "confronto",
+                "n_confrontati": len(report),
+                "n_anomalie": len(anom_mesi),
+                "anomalie_dettaglio": ", ".join(anom_mesi[:5]),
+                "csv": "reconcile_titoli12m_vs_isin.csv",
+            })
+
     # CASO 5: fabbisogno AP (TCCE0125) vs variazione stock (S13.MGD)
     if MART_FPI_FAB.exists():
         print("\n=== CASO 5: fabbisogno AP vs variazione stock (SFA implicito) ===")
@@ -258,9 +319,9 @@ def run():
         """).fetchall()
         stock_map = {d: v for d, v in stock}
 
-        fab = con.execute("""
+        fab = con.execute(f"""
             SELECT data, valore_mln_eur
-            FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
+            FROM read_parquet('{MART_FPI_FAB!s}')
             WHERE tavola_nome = 'fabbisogno_ap_strumenti' AND codice = 'S13.MGD'
             ORDER BY data
         """).fetchall()
@@ -309,6 +370,20 @@ def run():
                             r["sfa_implicito_mln_eur"]])
         print(f"[reconcile] OK {out}")
 
+        if report:
+            summary.append({
+                "id": "fabbisogno_vs_stock",
+                "nome": "Fabbisogno vs variazione stock",
+                "fonti": "Banca d'Italia FPI",
+                "periodo": f"{report[0]['mese']}–{report[-1]['mese']}",
+                "tipo": "identita_contabile",
+                "n_confrontati": len(report),
+                "sfa_cumulato_mld": round(tot_sfa / 1e3, 1),
+                "n_anomalie": len(big),
+                "anomalie_dettaglio": f"SFA cumulato {tot_sfa/1e3:+.1f} mld su {len(report)} mesi",
+                "csv": "reconcile_fabbisogno_vs_stock.csv",
+            })
+
     # CASO 6+7: BDAP Stato (oneri vs OCPI; accensione prestiti vs fabbisogno FPI)
     bdap = ROOT / "data" / "build" / "bdap_stato_summary.csv"
     ocpi_parquet = str(MART_OCPI) if MART_OCPI.exists() else None
@@ -344,10 +419,25 @@ def run():
         out6 = RECON_DIR / "reconcile_oneri_bdap_vs_ocpi.csv"
         with open(out6, "w", encoding="utf-8", newline="") as f:
             w = _csv.DictWriter(f, fieldnames=["anno", "oneri_bdap_mln_eur", "interessi_ocpi_mln_eur",
-                                               "delta_mln_eur", "delta_pct"])
+                                                "delta_mln_eur", "delta_pct"])
             w.writeheader()
             w.writerows(report6)
         print(f"[reconcile] OK {out6}")
+
+        if report6:
+            avg_delta = tot6 / len(report6)
+            summary.append({
+                "id": "oneri_bdap_vs_ocpi",
+                "nome": "Oneri debito BDAP vs interessi OCPI",
+                "fonti": "MEF BDAP, MEF OCPI",
+                "periodo": f"{report6[0]['anno']}–{report6[-1]['anno']}",
+                "tipo": "indicatore",
+                "n_confrontati": len(report6),
+                "delta_medio_mld": round(avg_delta / 1e3, 1),
+                "n_anomalie": 0,
+                "anomalie_dettaglio": f"delta medio {avg_delta/1e3:+.1f} mld/anno (previsione vs stima)",
+                "csv": "reconcile_oneri_bdap_vs_ocpi.csv",
+            })
 
         # SOTTOCASO 6b: CONSUNTIVO missione debito vs interessi OCPI
         consuntivo = ROOT / "data" / "build" / "bdap_consuntivo_debito.csv"
@@ -378,10 +468,24 @@ def run():
             out6b = RECON_DIR / "reconcile_consuntivo_vs_ocpi.csv"
             with open(out6b, "w", encoding="utf-8", newline="") as f:
                 w = _csv.DictWriter(f, fieldnames=["anno", "consuntivo_mln_eur", "ocpi_mln_eur",
-                                                   "delta_mln_eur", "delta_pct"])
+                                                    "delta_mln_eur", "delta_pct"])
                 w.writeheader()
                 w.writerows(report6b)
             print(f"[reconcile] OK {out6b}")
+
+            if report6b:
+                summary.append({
+                    "id": "consuntivo_vs_ocpi",
+                    "nome": "Consuntivo interessi vs OCPI",
+                    "fonti": "MEF BDAP consuntivo, MEF OCPI",
+                    "periodo": f"{report6b[0]['anno']}–{report6b[-1]['anno']}",
+                    "tipo": "confronto",
+                    "n_confrontati": len(report6b),
+                    "delta_medio_mld": round(avg6b / 1e3, 1) if avg6b else 0,
+                    "n_anomalie": 0,
+                    "anomalie_dettaglio": f"delta medio {avg6b/1e3:+.1f} mld/anno" if avg6b else "nessun dato",
+                    "csv": "reconcile_consuntivo_vs_ocpi.csv",
+                })
 
         print("\n=== CASO 7: accensione prestiti BDAP vs fabbisogno AP FPI ===")
         # fabbisogno annuale: somma del fabbisogno mensile S13.MGD per anno
@@ -414,10 +518,29 @@ def run():
             out7 = RECON_DIR / "reconcile_accensione_vs_fabbisogno.csv"
             with open(out7, "w", encoding="utf-8", newline="") as f:
                 w = _csv.DictWriter(f, fieldnames=["anno", "accensione_bdap_mln_eur",
-                                                   "fabbisogno_fpi_mln_eur", "delta_mln_eur"])
+                                                    "fabbisogno_fpi_mln_eur", "delta_mln_eur"])
                 w.writeheader()
                 w.writerows(report7)
             print(f"[reconcile] OK {out7}")
+
+            summary.append({
+                "id": "accensione_vs_fabbisogno",
+                "nome": "Accensione prestiti vs fabbisogno",
+                "fonti": "MEF BDAP, Banca d'Italia FPI",
+                "periodo": f"{report7[0]['anno']}–{report7[-1]['anno']}",
+                "tipo": "indicatore",
+                "n_confrontati": len(report7),
+                "n_anomalie": 0,
+                "anomalie_dettaglio": "perimetro diverso (lordo Stato vs netto AP)",
+                "csv": "reconcile_accensione_vs_fabbisogno.csv",
+            })
+
+    # ── Scrivi summary.json ────────────────────────────────────────
+    summary_path = RECON_DIR / "summary.json"
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    con.close()
+    print(f"\n[reconcile] OK summary: {len(summary)} casi -> {summary_path}")
 
 
 if __name__ == "__main__":

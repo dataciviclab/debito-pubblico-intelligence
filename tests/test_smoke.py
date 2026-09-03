@@ -23,7 +23,7 @@ TOOLKIT_MART_FPI_DET = TOOLKIT_OUT / "mart" / "fpi_debito_pa" / "2026" / "mart_d
 TOOLKIT_MART_OCPI = TOOLKIT_OUT / "mart" / "ocpi_serie_storiche" / "2026" / "mart_serie_storiche.parquet"
 TOOLKIT_MART_MEF_SCAD = TOOLKIT_OUT / "mart" / "mef_scadenze_isin" / "2026" / "mart_scadenze_isin.parquet"
 
-# Legacy output (reconcile/signals/scenarios/panorama) — still produced by scripts/
+# Legacy output (reconcile) — still produced by scripts/
 RECON_EURO = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_eurostat.csv"
 RECON_OCPI = ROOT / "data" / "reconcile" / "reconcile_fpi_vs_ocpi.csv"
 RECON_MEF = ROOT / "data" / "reconcile" / "reconcile_mef_vs_fpi.csv"
@@ -32,10 +32,7 @@ RECON_FAB = ROOT / "data" / "reconcile" / "reconcile_fabbisogno_vs_stock.csv"
 RECON_ONERI = ROOT / "data" / "reconcile" / "reconcile_oneri_bdap_vs_ocpi.csv"
 RECON_CONS = ROOT / "data" / "reconcile" / "reconcile_consuntivo_vs_ocpi.csv"
 RECON_ACC = ROOT / "data" / "reconcile" / "reconcile_accensione_vs_fabbisogno.csv"
-SIG = ROOT / "data" / "signals" / "signals.csv"
-SCEN = ROOT / "data" / "scenarios" / "scenarios.json"
-PANORAMA_JSON = ROOT / "data" / "reporting" / "panorama.json"
-PANORAMA_MD = ROOT / "data" / "reporting" / "panorama.md"
+RECON_SUMMARY = ROOT / "data" / "reconcile" / "summary.json"
 
 
 # ---------------------------------------------------------------------------
@@ -171,54 +168,25 @@ class TestLegacyReconcile:
 
 
 @pytest.mark.contract
-class TestLegacySignals:
-    def test_csv_exists(self):
-        if _skip_if_missing(SIG):
-            pytest.skip("legacy signals non presente")
-        assert SIG.exists()
-
-    def test_csv_has_enough_signals(self):
-        if _skip_if_missing(SIG):
-            pytest.skip("legacy signals non presente")
-        import csv as _csv
-        with open(SIG, encoding="utf-8") as f:
-            rows = list(_csv.DictReader(f))
-        assert len(rows) >= 8, f"meno di 8 segnali: {len(rows)}"
-
-
-@pytest.mark.contract
-class TestLegacyScenarios:
+class TestReconcileSummary:
     def test_json_exists(self):
-        if _skip_if_missing(SCEN):
-            pytest.skip("legacy scenari non presenti")
-        assert SCEN.exists()
+        if _skip_if_missing(RECON_SUMMARY):
+            pytest.skip("summary.json non presente (make reconcile non eseguito)")
+        assert RECON_SUMMARY.exists()
 
-    def test_has_enough_scenarios(self):
-        if _skip_if_missing(SCEN):
-            pytest.skip("legacy scenari non presenti")
-        with open(SCEN, encoding="utf-8") as f:
+    def test_has_enough_cases(self):
+        if _skip_if_missing(RECON_SUMMARY):
+            pytest.skip("summary.json non presente")
+        with open(RECON_SUMMARY, encoding="utf-8") as f:
             data = json.load(f)
-        scenari = data.get("scenari", [])
-        assert len(scenari) >= 5, f"meno di 5 scenari: {len(scenari)}"
+        assert len(data) >= 4, f"meno di 4 casi: {len(data)}"
 
-
-@pytest.mark.contract
-class TestLegacyPanorama:
-    def test_json_exists(self):
-        if _skip_if_missing(PANORAMA_JSON):
-            pytest.skip("legacy panorama non presente")
-        assert PANORAMA_JSON.exists()
-
-    def test_has_sections(self):
-        if _skip_if_missing(PANORAMA_JSON):
-            pytest.skip("legacy panorama non presente")
-        with open(PANORAMA_JSON, encoding="utf-8") as f:
+    def test_cases_have_required_fields(self):
+        if _skip_if_missing(RECON_SUMMARY):
+            pytest.skip("summary.json non presente")
+        with open(RECON_SUMMARY, encoding="utf-8") as f:
             data = json.load(f)
-        assert data.get("segnali"), "panorama senza segnali"
-        assert data.get("profilo"), "panorama senza profilo"
-
-    def test_md_exists(self):
-        if _skip_if_missing(PANORAMA_MD):
-            pytest.skip("legacy panorama.md non presente")
-        content = PANORAMA_MD.read_text(encoding="utf-8")
-        assert len(content) > 500, "panorama.md troppo corto"
+        for item in data:
+            assert "id" in item, f"caso senza id: {item}"
+            assert "nome" in item, f"caso senza nome: {item}"
+            assert "n_anomalie" in item, f"caso senza n_anomalie: {item}"
