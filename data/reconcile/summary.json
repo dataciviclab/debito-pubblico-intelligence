@@ -1,0 +1,93 @@
+[
+  {
+    "id": "fpi_vs_eurostat",
+    "nome": "FPI vs Eurostat",
+    "fonti": "Banca d'Italia FPI, Eurostat gov_10dd_edpt1",
+    "periodo": "1995–2025",
+    "tipo": "confronto",
+    "n_confrontati": 31,
+    "n_anomalie": 1,
+    "anomalie_dettaglio": "1995 (delta -7.03%)",
+    "csv": "reconcile_fpi_vs_eurostat.csv"
+  },
+  {
+    "id": "fpi_vs_ocpi",
+    "nome": "FPI vs OCPI",
+    "fonti": "Banca d'Italia FPI, MEF OCPI",
+    "periodo": "1861–2025",
+    "tipo": "confronto",
+    "n_confrontati": 165,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "",
+    "csv": "reconcile_fpi_vs_ocpi.csv"
+  },
+  {
+    "id": "mef_vs_fpi_titoli",
+    "nome": "MEF titoli vs FPI titoli",
+    "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
+    "periodo": "2026-06",
+    "tipo": "rapporto",
+    "rapporto_pct": 101.1,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "rapporto 101.1%",
+    "csv": "reconcile_mef_vs_fpi.csv"
+  },
+  {
+    "id": "titoli12m_vs_isin",
+    "nome": "MEF titoli-12m vs rollover ISIN",
+    "fonti": "MEF Tesoro titoli-12m, MEF Tesoro ISIN-level",
+    "periodo": "2026-08–2027-07",
+    "tipo": "confronto",
+    "n_confrontati": 12,
+    "n_anomalie": 4,
+    "anomalie_dettaglio": "2026-09, 2026-12, 2027-01, 2027-06",
+    "csv": "reconcile_titoli12m_vs_isin.csv"
+  },
+  {
+    "id": "fabbisogno_vs_stock",
+    "nome": "Fabbisogno vs variazione stock",
+    "fonti": "Banca d'Italia FPI",
+    "periodo": "2023-07–2026-06",
+    "tipo": "identita_contabile",
+    "n_confrontati": 36,
+    "sfa_cumulato_mld": 19.3,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "SFA cumulato +19.3 mld su 36 mesi",
+    "csv": "reconcile_fabbisogno_vs_stock.csv"
+  },
+  {
+    "id": "oneri_bdap_vs_ocpi",
+    "nome": "Oneri debito BDAP vs interessi OCPI",
+    "fonti": "MEF BDAP, MEF OCPI",
+    "periodo": "2008–2024",
+    "tipo": "indicatore",
+    "n_confrontati": 17,
+    "delta_medio_mld": 10.6,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "delta medio +10.6 mld/anno (previsione vs stima)",
+    "csv": "reconcile_oneri_bdap_vs_ocpi.csv"
+  },
+  {
+    "id": "consuntivo_vs_ocpi",
+    "nome": "Consuntivo interessi vs OCPI",
+    "fonti": "MEF BDAP consuntivo, MEF OCPI",
+    "periodo": "2014–2025",
+    "tipo": "confronto",
+    "n_confrontati": 12,
+    "delta_medio_mld": 0.2,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "delta medio +0.2 mld/anno",
+    "csv": "reconcile_consuntivo_vs_ocpi.csv"
+  },
+  {
+    "id": "accensione_vs_fabbisogno",
+    "nome": "Accensione prestiti vs fabbisogno",
+    "fonti": "MEF BDAP, Banca d'Italia FPI",
+    "periodo": "2008–2024",
+    "tipo": "indicatore",
+    "n_confrontati": 17,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "perimetro diverso (lordo Stato vs netto AP)",
+    "csv": "reconcile_accensione_vs_fabbisogno.csv"
+  }
+]
