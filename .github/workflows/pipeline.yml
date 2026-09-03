@@ -47,8 +47,8 @@ jobs:
       - name: BDAP
         run: make bdap
 
-      - name: Signals + reconcile + panorama
-        run: make signals reconcile panorama
+      - name: Reconcile
+        run: make reconcile
 
       - name: Test
         run: make test

@@ -28,31 +28,21 @@ check:
 	done
 	@echo "✅ All configs valid"
 
-# --- Script analitici (legacy, leggono da data/) ----------------------------
-# reconcile.py e signals.py leggono ancora da data/ (legacy path).
+# --- Script analitici (legacy) -----------------------------------------------
+# reconcile.py produce CSV + summary.json per la dashboard.
 # bdap.py produce data/build/bdap_*.csv da GCS.
-# Questi target funzionano SOLO se il legacy pipeline è stato eseguito.
 
-.PHONY: bdap reconcile signals scenario panorama
+.PHONY: bdap reconcile
 bdap:
 	python3 scripts/bdap.py
 
 reconcile: bdap
 	python3 scripts/reconcile.py
 
-signals:
-	python3 scripts/signals.py
-
-scenario:
-	python3 scripts/scenarios.py
-
-panorama:
-	python3 reports/panorama.py
-
 # --- Pipeline completa: toolkit + analitici + test ----------------------------
 
 .PHONY: all
-all: run-all reconcile signals scenario panorama test
+all: run-all reconcile test
 
 # --- Test --------------------------------------------------------------------
 
