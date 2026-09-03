@@ -9,12 +9,10 @@ Sezione 4: What-if scenari (slider interattivi)
 from datetime import date
 from pathlib import Path
 
-import duckdb
 import streamlit as st
-from sources import query_ocpi, query_scadenze
+from sources import query_ocpi, query_scadenze, query_debito_pil, query_rendimento, query_fpi, query_vita_media
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-MART = ROOT / "out" / "data" / "mart"
 RECON_DIR = ROOT / "data" / "reconcile"
 
 st.set_page_config(page_title="Debito Pubblico · Dashboard", page_icon="🇮🇹", layout="wide")
@@ -29,52 +27,78 @@ st.caption(f"Aggiornato al {date.today().isoformat()} · Fonti: Banca d'Italia, 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _load_signals():
-    """5 KPI principali da mart diretti."""
-    euro_dp = str(MART / "eurostat_debito_pil/2026/mart_debito_pil.parquet")
-    euro_r10 = str(MART / "eurostat_rendimento_10y/2026/mart_rendimento_10y.parquet")
-    mef_scad = str(MART / "mef_scadenze_isin/2026/mart_scadenze_isin.parquet")
-
-    con = duckdb.connect()
-    q = {
-        "debito_pil": f"SELECT debito_pil_pct FROM read_parquet('{euro_dp}') WHERE settore='S13' ORDER BY anno DESC LIMIT 1",
-        "rendimento_10y": f"SELECT rendimento_pct FROM read_parquet('{euro_r10}') WHERE paese='IT' ORDER BY mese DESC LIMIT 1",
-        "spread": (
-            f"WITH it AS (SELECT rendimento_pct r FROM read_parquet('{euro_r10}') WHERE paese='IT' ORDER BY mese DESC LIMIT 1), "
-            f"de AS (SELECT rendimento_pct r FROM read_parquet('{euro_r10}') WHERE paese='DE' ORDER BY mese DESC LIMIT 1) "
-            "SELECT round(it.r - de.r, 2) FROM it, de"
-        ),
-        "rollover_12m": (
-            f"WITH t AS (SELECT sum(circolante_nom_eur) tot FROM read_parquet('{mef_scad}') WHERE scadenza >= data_ref), "
-            f"r AS (SELECT sum(circolante_nom_eur) r12 FROM read_parquet('{mef_scad}') "
-            "WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)) "
-            "SELECT round(r12 / tot * 100, 1) FROM t, r"
-        ),
-    }
+    """KPI principali da GCS via sources.py."""
     sig = {}
-    try:
-        for k, sql in q.items():
-            try:
-                row = con.execute(sql).fetchone()
-                if row and row[0] is not None:
-                    sig[k] = float(row[0])
-            except Exception:
-                pass
-    finally:
-        con.close()
 
-    # KPI da OCPI (clean layer, via sources)
+    # Debito/PIL da Eurostat
     try:
-        df_dpil = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'D' ORDER BY anno DESC LIMIT 2")
-        if not df_dpil.empty:
-            sig["debito_pil_ocpi"] = float(df_dpil.iloc[0]["valore"])
-            if len(df_dpil) > 1:
-                sig["debito_pil_delta"] = float(df_dpil.iloc[0]["valore"] - df_dpil.iloc[1]["valore"])
-        df_i = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'I' ORDER BY anno DESC LIMIT 1")
+        df = query_debito_pil("SELECT anno, debito_pil_pct FROM clean_input WHERE settore='S13' ORDER BY anno DESC LIMIT 2")
+        if not df.empty:
+            sig["debito_pil"] = float(df.iloc[0]["debito_pil_pct"])
+            if len(df) > 1:
+                sig["debito_pil_delta"] = float(df.iloc[0]["debito_pil_pct"] - df.iloc[1]["debito_pil_pct"])
+    except Exception:
+        pass
+
+    # Rendimento 10Y da Eurostat
+    try:
+        df = query_rendimento("SELECT paese, rendimento_pct FROM clean_input WHERE paese IN ('IT','DE') ORDER BY mese DESC")
+        if not df.empty:
+            it = df[df["paese"] == "IT"]
+            de = df[df["paese"] == "DE"]
+            if not it.empty:
+                sig["rendimento_10y"] = float(it.iloc[0]["rendimento_pct"])
+            if not it.empty and not de.empty:
+                sig["spread"] = round(float(it.iloc[0]["rendimento_pct"] - de.iloc[0]["rendimento_pct"]), 2)
+    except Exception:
+        pass
+
+    # Interessi/PIL e Saldo primario da OCPI
+    try:
+        df_i = query_ocpi("SELECT valore FROM clean_input WHERE serie = 'I' ORDER BY anno DESC LIMIT 1")
         if not df_i.empty:
             sig["interessi_pil"] = float(df_i.iloc[0]["valore"])
-        df_g = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'G' ORDER BY anno DESC LIMIT 1")
+        df_g = query_ocpi("SELECT valore FROM clean_input WHERE serie = 'G' ORDER BY anno DESC LIMIT 1")
         if not df_g.empty:
             sig["saldo_pil"] = float(df_g.iloc[0]["valore"])
+    except Exception:
+        pass
+
+    # Rollover 12m da scadenze
+    try:
+        df = query_scadenze("""
+            SELECT
+                sum(circolante_nom_eur) AS tot,
+                sum(CASE WHEN scadenza < date_add(data_ref, INTERVAL 12 MONTH) THEN circolante_nom_eur ELSE 0 END) AS r12
+            FROM clean_input WHERE scadenza >= data_ref
+        """)
+        if not df.empty and df.iloc[0]["tot"] > 0:
+            sig["rollover_12m"] = round(float(df.iloc[0]["r12"] / df.iloc[0]["tot"] * 100), 1)
+    except Exception:
+        pass
+
+    # Debito AP da FPI
+    try:
+        df = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1")
+        if not df.empty:
+            sig["debito_ap"] = float(df.iloc[0]["valore_mln_eur"])
+    except Exception:
+        pass
+
+    # Bd'Italia detiene % da FPI
+    try:
+        df_det = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE codice='S13.MGD.S121' ORDER BY data DESC LIMIT 1")
+        df_ap = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1")
+        if not df_det.empty and not df_ap.empty and df_ap.iloc[0]["valore_mln_eur"] > 0:
+            sig["banca_italia_pct"] = round(float(df_det.iloc[0]["valore_mln_eur"] / df_ap.iloc[0]["valore_mln_eur"] * 100), 1)
+    except Exception:
+        pass
+
+    # Vita media residua da MEF
+    try:
+        df = query_vita_media("SELECT round(max(vita_media_mesi)/12.0, 1) AS anni FROM clean_input WHERE tipologia='TOTALE'")
+        if not df.empty and df.iloc[0]["anni"] is not None:
+            sig["vita_media"] = float(df.iloc[0]["anni"])
     except Exception:
         pass
 
@@ -101,7 +125,7 @@ def _color_threshold(val, threshold, orient="high_bad"):
 k1, k2, k3, k4, k5 = st.columns(5)
 
 with k1:
-    v = sig.get("debito_pil_ocpi", sig.get("debito_pil", 0))
+    v = sig.get("debito_pil", 0)
     d = sig.get("debito_pil_delta")
     st.metric("Debito/PIL", f"{v:.1f}%", delta=f"{d:+.1f}%" if d else None,
               delta_color="inverse" if _color_threshold(v, 130) == "bad" else "normal",
@@ -141,50 +165,21 @@ with k6:
               help="% debito in scadenza nei prossimi 12 mesi")
 
 with k7:
-    # Vita media da mart
-    try:
-        con = duckdb.connect()
-        vm_path = str(MART / "mef_vita_media/2026/mart_vita_media.parquet")
-        row = con.execute(f"SELECT round(max(vita_media_mesi)/12.0, 1) FROM read_parquet('{vm_path}') WHERE tipologia='TOTALE'").fetchone()
-        con.close()
-        v = float(row[0]) if row else 0
-        c = _color_threshold(v, 5, "low_bad")
-        st.metric("Vita Media", f"{v:.1f} anni",
-                  delta_color="inverse" if c == "bad" else "normal",
-                  help="<5 anni = durata corta")
-    except Exception:
-        st.metric("Vita Media", "—")
+    v = sig.get("vita_media", 0)
+    c = _color_threshold(v, 5, "low_bad")
+    st.metric("Vita Media", f"{v:.1f} anni",
+              delta_color="inverse" if c == "bad" else "normal",
+              help="<5 anni = durata corta")
 
 with k8:
-    # Debito totale da FPI
-    try:
-        con = duckdb.connect()
-        ap_path = str(MART / "fpi_debito_pa/2026/mart_debito_ap.parquet")
-        row = con.execute(f"SELECT valore_mln_eur FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1").fetchone()
-        con.close()
-        v = float(row[0]) if row else 0
-        st.metric("Debito AP", f"€ {v/1e3:,.0f} mld",
-                  help="Stock debito Amministrazioni Pubbliche")
-    except Exception:
-        st.metric("Debito AP", "—")
+    v = sig.get("debito_ap", 0)
+    st.metric("Debito AP", f"€ {v/1e3:,.0f} mld",
+              help="Stock debito Amministrazioni Pubbliche")
 
 with k9:
-    # Bd'Italia detiene %
-    try:
-        con = duckdb.connect()
-        det_path = str(MART / "fpi_debito_pa/2026/mart_detentori.parquet")
-        ap_path = str(MART / "fpi_debito_pa/2026/mart_debito_ap.parquet")
-        row = con.execute(f"""
-            SELECT round(
-                (SELECT valore_mln_eur FROM read_parquet('{det_path}') WHERE codice='S13.MGD.S121' AND data=(SELECT max(data) FROM read_parquet('{det_path}') WHERE codice='S13.MGD.S121'))
-                / (SELECT valore_mln_eur FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' AND data=(SELECT max(data) FROM read_parquet('{ap_path}') WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD')) * 100, 1)
-        """).fetchone()
-        con.close()
-        v = float(row[0]) if row else 0
-        st.metric("Bd'Italia detiene", f"{v:.1f}%",
-                  help="% debito AP detenuto da Banca d'Italia")
-    except Exception:
-        st.metric("Bd'Italia detiene", "—")
+    v = sig.get("banca_italia_pct", 0)
+    st.metric("Bd'Italia detiene", f"{v:.1f}%",
+              help="% debito AP detenuto da Banca d'Italia")
 
 st.divider()
 
@@ -429,7 +424,7 @@ for nome, i, g, sp in SCEN_PRESETS:
         "Δ": f"{traj[-1] - traj[0]:+.1f} pp",
     })
 rows.append({
-    "Scenario": "**Custom**",
+    "Scenario": "Custom",
     "i %": f"{i_custom:.2f}",
     "g %": f"{g_custom:.2f}",
     "sp %": f"{sp_custom:+.1f}",

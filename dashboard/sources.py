@@ -49,3 +49,8 @@ def query_scadenze(sql: str, year: int = 2026):
 @st.cache_data(ttl=3600, show_spinner=False)
 def query_fpi(sql: str, year: int = 2026):
     return _q("fpi_debito_pa", sql, year)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def query_vita_media(sql: str, year: int = 2026):
+    return _q("mef_vita_media", sql, year)
