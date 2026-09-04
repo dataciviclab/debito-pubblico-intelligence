@@ -10,7 +10,14 @@ from datetime import date
 from pathlib import Path
 
 import streamlit as st
-from sources import query_ocpi, query_scadenze, query_debito_pil, query_rendimento, query_fpi, query_vita_media
+from sources import (
+    query_debito_pil,
+    query_fpi,
+    query_ocpi,
+    query_rendimento,
+    query_scadenze,
+    query_vita_media,
+)
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 RECON_DIR = ROOT / "data" / "reconcile"

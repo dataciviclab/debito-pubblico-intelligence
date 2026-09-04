@@ -2,9 +2,10 @@
 Estrattore BDAP Stato (entrate/spese + consuntivo pagamenti).
 
 Non scarica nulla: legge i dataset già prodotti dal Lab.
-- bdap_entrate_stato, bdap_spese_stato (previsioni) via GCS lab_connectors.gcs.paths
-- bdap_pagamenti_stato (CONSUNTIVO) dal mart locale del candidate in dataset-incubator
-  (quando il candidate sarà promosso, il path migrerà su GCS)
+- bdap_entrate_stato, bdap_spese_stato (previsioni) via GCS
+- bdap_pagamenti_stato (CONSUNTIVO) via GCS
+
+Tutti i dati sono in gs://dataciviclab-{mart|clean}/bilancio-pubblico/
 
 Usato da reconcile per:
   caso 6: oneri consuntivi vs interessi OCPI (e vs oneri previsti BDAP)
@@ -13,7 +14,6 @@ Usato da reconcile per:
 Output (celle estratte, non layer):
   data/build/bdap_stato_summary.csv   — per anno: trib, accensione, oneri, rimborsi
   data/build/bdap_consuntivo_debito.csv — serie consuntivo missione Debito pubblico
-  (consuntivo letto dal mart di bdap_pagamenti_stato, GCS con fallback locale)
 """
 
 import csv
@@ -27,16 +27,13 @@ BUILD_DIR = ROOT / "data" / "build"
 
 YEARS = range(2008, 2025)
 
-# Mart locale del candidate bdap-pagamenti-stato (dataset-incubator)
-CANDIDATE_MART = Path(
-    "/home/gabry/dev/dataciviclab-workspace/dataset-incubator/out/data/mart/"
-    "bdap_pagamenti_stato"
-)
+PREFIX = "bilancio-pubblico/"
 
 
 def _url(slug, year):
     from lab_connectors.gcs.paths import gs_url
-    return gs_url("clean", "clean_parquet", slug=slug, year=year)
+
+    return gs_url("clean", "clean_parquet", slug=slug, year=year, prefix=PREFIX)
 
 
 def _last_available(con, slug):
@@ -86,7 +83,16 @@ def build_summary():
     out = BUILD_DIR / "bdap_stato_summary.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["anno", "trib_cp", "accensione_cp", "oneri_cp", "rimborsi_cp", "totale_spese_cp"])
+        w.writerow(
+            [
+                "anno",
+                "trib_cp",
+                "accensione_cp",
+                "oneri_cp",
+                "rimborsi_cp",
+                "totale_spese_cp",
+            ]
+        )
         for r in rows:
             w.writerow([r[0], r[1], r[2], r[3], r[4], r[5]])
     print(f"[bdap] OK {out}: {len(rows)} anni")
@@ -94,37 +100,37 @@ def build_summary():
 
 
 def _consuntivo_file_urls(con):
-    """URL dei mart consuntivo per anno: GCS (candidate promosso) con fallback locale."""
+    """URL dei mart consuntivo per anno da GCS."""
     from lab_connectors.gcs.paths import gs_url
 
     urls = []
     for year in range(2014, 2026):
         try:
-            url = gs_url("mart", "mart_parquet", slug="bdap_pagamenti_stato", year=year,
-                         table="mart_pagamenti_missione_categoria")
+            url = gs_url(
+                "mart",
+                "mart_parquet",
+                slug="bdap_pagamenti_stato",
+                year=year,
+                table="mart_pagamenti_missione_categoria",
+                prefix=PREFIX,
+            )
             n = con.execute(f"SELECT count(*) FROM read_parquet('{url}')").fetchone()[0]
             if n and n > 0:
                 urls.append(url)
         except Exception:
             continue
-    if urls:
-        return urls
-    # fallback: mart locale del candidate (se non ancora promosso)
-    if CANDIDATE_MART.exists():
-        return sorted(str(f) for f in CANDIDATE_MART.glob("*/mart_pagamenti_missione_categoria.parquet"))
-    return []
+    return urls
 
 
 def build_consuntivo():
     """Serie consuntiva della missione 'Debito pubblico' (interessi/rimborsi).
 
-    Legge il mart del candidate bdap_pagamenti_stato (2014-2025): prima da GCS
-    (candidate promosso), fallback al mart locale del candidate in dataset-incubator.
+    Legge il mart bdap_pagamenti_stato (2014-2025) da GCS.
     """
     con = duckdb.connect()
     file_urls = _consuntivo_file_urls(con)
     if not file_urls:
-        print("[bdap] consuntivo: nessun mart disponibile (GCS o locale) (skip)")
+        print("[bdap] consuntivo: nessun mart disponibile su GCS (skip)")
         return None
 
     rows = con.execute(f"""

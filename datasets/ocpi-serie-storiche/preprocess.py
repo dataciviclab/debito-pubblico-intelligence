@@ -20,7 +20,7 @@ def _find_xlsx_url() -> str:
     with urllib.request.urlopen(req, timeout=30) as resp:
         html = resp.read().decode("utf-8", "ignore")
     all_links = [m.group(1) for m in re.finditer(r'href=\"([^\"]+)\"', html)]
-    links = [l for l in all_links if l.lower().endswith(('.xlsx', 'xls'))]
+    links = [link for link in all_links if link.lower().endswith(('.xlsx', 'xls'))]
 
     if not links:
         print("[ERRORE] ocpi: nessun link .xlsx trovato")
