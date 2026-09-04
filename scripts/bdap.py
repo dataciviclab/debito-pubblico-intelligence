@@ -25,7 +25,7 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 BUILD_DIR = ROOT / "data" / "build"
 
-YEARS = range(2008, 2025)
+YEARS = range(2008, 2026)
 
 PREFIX = "bilancio-pubblico/"
 
