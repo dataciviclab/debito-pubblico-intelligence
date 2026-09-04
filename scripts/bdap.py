@@ -32,6 +32,7 @@ PREFIX = "bilancio-pubblico/"
 
 def _url(slug, year):
     from lab_connectors.gcs.paths import gs_url
+
     return gs_url("clean", "clean_parquet", slug=slug, year=year, prefix=PREFIX)
 
 
@@ -82,7 +83,16 @@ def build_summary():
     out = BUILD_DIR / "bdap_stato_summary.csv"
     with open(out, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["anno", "trib_cp", "accensione_cp", "oneri_cp", "rimborsi_cp", "totale_spese_cp"])
+        w.writerow(
+            [
+                "anno",
+                "trib_cp",
+                "accensione_cp",
+                "oneri_cp",
+                "rimborsi_cp",
+                "totale_spese_cp",
+            ]
+        )
         for r in rows:
             w.writerow([r[0], r[1], r[2], r[3], r[4], r[5]])
     print(f"[bdap] OK {out}: {len(rows)} anni")
@@ -96,8 +106,14 @@ def _consuntivo_file_urls(con):
     urls = []
     for year in range(2014, 2026):
         try:
-            url = gs_url("mart", "mart_parquet", slug="bdap_pagamenti_stato", year=year,
-                         table="mart_pagamenti_missione_categoria", prefix=PREFIX)
+            url = gs_url(
+                "mart",
+                "mart_parquet",
+                slug="bdap_pagamenti_stato",
+                year=year,
+                table="mart_pagamenti_missione_categoria",
+                prefix=PREFIX,
+            )
             n = con.execute(f"SELECT count(*) FROM read_parquet('{url}')").fetchone()[0]
             if n and n > 0:
                 urls.append(url)
