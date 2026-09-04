@@ -59,12 +59,12 @@
     "id": "oneri_bdap_vs_ocpi",
     "nome": "Oneri debito BDAP vs interessi OCPI",
     "fonti": "MEF BDAP, MEF OCPI",
-    "periodo": "2008–2024",
+    "periodo": "2008–2025",
     "tipo": "indicatore",
-    "n_confrontati": 17,
-    "delta_medio_mld": 10.6,
+    "n_confrontati": 18,
+    "delta_medio_mld": 11.1,
     "n_anomalie": 0,
-    "anomalie_dettaglio": "delta medio +10.6 mld/anno (previsione vs stima)",
+    "anomalie_dettaglio": "delta medio +11.1 mld/anno (previsione vs stima)",
     "csv": "reconcile_oneri_bdap_vs_ocpi.csv"
   },
   {
@@ -83,9 +83,9 @@
     "id": "accensione_vs_fabbisogno",
     "nome": "Accensione prestiti vs fabbisogno",
     "fonti": "MEF BDAP, Banca d'Italia FPI",
-    "periodo": "2008–2024",
+    "periodo": "2008–2025",
     "tipo": "indicatore",
-    "n_confrontati": 17,
+    "n_confrontati": 18,
     "n_anomalie": 0,
     "anomalie_dettaglio": "perimetro diverso (lordo Stato vs netto AP)",
     "csv": "reconcile_accensione_vs_fabbisogno.csv"
