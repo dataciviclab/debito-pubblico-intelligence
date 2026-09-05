@@ -4,16 +4,19 @@ Lo stock, gli spread, le scadenze e la storia del debito italiano.
 """
 
 import streamlit as st
-
 from lab_connectors.branding import apply_branding
 
-st.set_page_config(    page_title="Debito Pubblico · Dashboard",
+st.set_page_config(
+    page_title="Debito Pubblico · Dashboard",
     page_icon="🇮🇹",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-apply_branding(repo_name="debito-pubblico-intelligence", repo_url="https://github.com/dataciviclab/debito-pubblico-intelligence")
+apply_branding(
+    repo_name="debito-pubblico-intelligence",
+    repo_url="https://github.com/dataciviclab/debito-pubblico-intelligence",
+)
 
 pages = {
     "": [
