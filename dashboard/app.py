@@ -5,12 +5,15 @@ Lo stock, gli spread, le scadenze e la storia del debito italiano.
 
 import streamlit as st
 
-st.set_page_config(
-    page_title="Debito Pubblico · Dashboard",
+from lab_connectors.branding import apply_branding
+
+st.set_page_config(    page_title="Debito Pubblico · Dashboard",
     page_icon="🇮🇹",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+apply_branding(repo_name="debito-pubblico-intelligence", repo_url="https://github.com/dataciviclab/debito-pubblico-intelligence")
 
 pages = {
     "": [
@@ -30,9 +33,6 @@ pages = {
 
 pg = st.navigation(pages, position="sidebar")
 
-st.sidebar.markdown("---")
 st.sidebar.caption("Fonti: MEF OCPI · Eurostat · Banca d'Italia · MEF Tesoro")
-st.sidebar.caption("Codice: [dataciviclab/debito-pubblico-intelligence](https://github.com/dataciviclab/debito-pubblico-intelligence)")
-st.sidebar.caption("[DataCivicLab](https://dataciviclab.org/) · CC BY 4.0")
 
 pg.run()
