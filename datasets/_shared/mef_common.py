@@ -91,7 +91,7 @@ def parse_date(s: str):
         return None
     for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(s, fmt).date()  # noqa: DTZ007
+            return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
     return None

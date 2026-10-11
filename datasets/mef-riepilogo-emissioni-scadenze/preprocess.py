@@ -23,7 +23,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "_shared"))
-from mef_common import USER_AGENT, parse_amount, parse_date  # noqa: E402
+from mef_common import USER_AGENT, parse_amount, parse_date
 
 SITE = "https://www.dt.mef.gov.it"
 PAGES = {
@@ -37,7 +37,7 @@ PAGES = {
 ISIN_RE = re.compile(r"(IT[0-9]{10})")
 DATE_RE = re.compile(r"(\d{2}/\d{2}/\d{4})")
 TENOR_RE = re.compile(r"^([0-9]+[MY])$")
-CSV_HREF_RE = re.compile(r'href="([^"]+\.csv)"', re.I)
+CSV_HREF_RE = re.compile(r'href="([^"]+\.csv)"', re.IGNORECASE)
 
 
 def http_get(url: str, timeout: int = 45) -> bytes:
@@ -51,7 +51,7 @@ def discover_csv(page: str, year: int) -> str | None:
     url = f"{SITE}{page}?selezione-anno={year}"
     try:
         html = http_get(url).decode("utf-8", "ignore")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[riepilogo] page fail {page} {year}: {exc}")
         return None
     hrefs = CSV_HREF_RE.findall(html)
@@ -229,7 +229,7 @@ def main() -> None:
             print(f"[riepilogo] {tip} {year} -> {url.split('/')[-1][:70]}")
             try:
                 data = http_get(url)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"[riepilogo] download fail {tip} {year}: {exc}")
                 continue
             recs = parse_file(data, tip, year)
