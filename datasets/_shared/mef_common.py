@@ -10,9 +10,18 @@ MEF_BASE = "https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici"
 USER_AGENT = "Mozilla/5.0"
 
 MONTHS = {
-    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4,
-    "maggio": 5, "giugno": 6, "luglio": 7, "agosto": 8,
-    "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
+    "gennaio": 1,
+    "febbraio": 2,
+    "marzo": 3,
+    "aprile": 4,
+    "maggio": 5,
+    "giugno": 6,
+    "luglio": 7,
+    "agosto": 8,
+    "settembre": 9,
+    "ottobre": 10,
+    "novembre": 11,
+    "dicembre": 12,
 }
 
 
@@ -86,6 +95,7 @@ def parse_amount(s: str):
 def parse_date(s: str):
     """Parsing data GG/MM/AAAA."""
     from datetime import datetime
+
     s = (s or "").strip()
     if not s:
         return None
