@@ -27,20 +27,20 @@
     "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
     "periodo": "2026-07",
     "tipo": "rapporto",
-    "rapporto_pct": 100.4,
+    "rapporto_pct": 100.2,
     "n_anomalie": 0,
-    "anomalie_dettaglio": "rapporto 100.4%",
+    "anomalie_dettaglio": "rapporto 100.2%",
     "csv": "reconcile_mef_vs_fpi.csv"
   },
   {
     "id": "titoli12m_vs_isin",
     "nome": "MEF titoli-12m vs rollover ISIN",
     "fonti": "MEF Tesoro titoli-12m, MEF Tesoro ISIN-level",
-    "periodo": "2026-09–2027-08",
+    "periodo": "2026-10–2027-09",
     "tipo": "confronto",
     "n_confrontati": 12,
     "n_anomalie": 5,
-    "anomalie_dettaglio": "2026-09, 2026-12, 2027-01, 2027-06, 2027-08",
+    "anomalie_dettaglio": "2026-12, 2027-01, 2027-06, 2027-08, 2027-09",
     "csv": "reconcile_titoli12m_vs_isin.csv"
   },
   {
