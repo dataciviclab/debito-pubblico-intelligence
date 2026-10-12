@@ -1,0 +1,61 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "mef_riepilogo_emissioni_scadenze"
+  source_id: "mef_tesoro"
+  tags: [finanza-pubblica, debito, titoli, emissioni, scadenze, isin, mef]
+  category: finanza-pubblica
+  description: >
+    Riepilogo MEF Tesoro emissioni e scadenze Titoli di Stato (BTP, BOT):
+    grano ISIN × anno × sezione (EMISSIONI/SCADENZE). Ponte flusso BDAP 034
+    ↔ stock/scadenze titoli. Pattern DPI: preprocess.py per CSV irregolari.
+  years: [2026]
+  time_coverage:
+    start_year: 2020
+    end_year: 2026
+
+raw:
+  output_policy: overwrite
+  sources:
+    - name: "mef_riepilogo_{year}"
+      type: "script"
+      args:
+        command: "python preprocess.py raw_input.csv"
+        output: "raw_input.csv"
+        filename: "raw_input.csv"
+      primary: true
+
+clean:
+  sql: "sql/clean.sql"
+  read:
+    source: config_only
+    mode: latest
+  required_columns: [anno, tipologia, sezione, isin, scadenza, importo_mld]
+  validate:
+    not_null: [anno, sezione, isin]
+    min_rows: 50
+
+mart:
+  tables:
+    - name: "mart_per_anno_tipologia"
+      sql: "sql/mart_per_anno_tipologia.sql"
+    - name: "mart_scadenze_per_anno"
+      sql: "sql/mart_scadenze_per_anno.sql"
+  required_tables:
+    - mart_per_anno_tipologia
+    - mart_scadenze_per_anno
+  validate:
+    table_rules:
+      mart_per_anno_tipologia:
+        min_rows: 4
+        required_columns: [anno, tipologia, sezione, totale_mld]
+      mart_scadenze_per_anno:
+        min_rows: 5
+        required_columns: [anno, tipologia, isin, scadenza]
+
+validation:
+  fail_on_error: true
+
+duckdb:
+  memory_limit: "4GB"
