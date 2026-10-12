@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repo": "debito-pubblico-intelligence",
   "source_repo": "dataciviclab/debito-pubblico-intelligence",
-  "updated_at": "2026-10-01",
+  "updated_at": "2026-10-12",
   "datasets": [
     {
       "slug": "eurostat_debito_pil",
@@ -231,6 +231,88 @@
       "stage": "incubating",
       "mart_refs": [
         "mef_composizione__mart_composizione"
+      ]
+    },
+    {
+      "slug": "mef_riepilogo_emissioni_scadenze",
+      "name": "Mef Riepilogo Emissioni Scadenze",
+      "description": "Riepilogo MEF Tesoro emissioni e scadenze Titoli di Stato (BTP, BOT): grano ISIN × anno × sezione (EMISSIONI/SCADENZE). Ponte flusso BDAP 034 ↔ stock/scadenze titoli. Pattern DPI: preprocess.py per CSV irregolari.\n",
+      "source": "",
+      "source_id": "mef_tesoro",
+      "period": {
+        "start": 2020,
+        "end": 2026
+      },
+      "tags": [
+        "finanza-pubblica",
+        "debito",
+        "titoli",
+        "emissioni",
+        "scadenze",
+        "isin",
+        "mef"
+      ],
+      "category": "finanza-pubblica",
+      "columns": [
+        {
+          "name": "anno",
+          "type": "INTEGER",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "year"
+        },
+        {
+          "name": "tipologia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "sezione",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "isin",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "scadenza",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tipo_tenore",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "importo_mld",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "importo_abs_mld",
+          "type": "DOUBLE",
+          "role": "metric",
+          "description": ""
+        }
+      ],
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-clean/debito_pubblico_intelligence/mef_riepilogo_emissioni_scadenze/2026/mef_riepilogo_emissioni_scadenze_2026_clean.parquet",
+        "multi_file": false
+      },
+      "stage": "incubating",
+      "mart_refs": [
+        "mef_riepilogo_emissioni_scadenze__mart_per_anno_tipologia",
+        "mef_riepilogo_emissioni_scadenze__mart_scadenze_per_anno"
       ]
     },
     {
@@ -553,6 +635,26 @@
       }
     },
     {
+      "slug": "mef_riepilogo_emissioni_scadenze__mart_per_anno_tipologia",
+      "dataset": "mef_riepilogo_emissioni_scadenze",
+      "table": "mart_per_anno_tipologia",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_riepilogo_emissioni_scadenze/2026/mart_per_anno_tipologia.parquet",
+        "multi_file": false
+      }
+    },
+    {
+      "slug": "mef_riepilogo_emissioni_scadenze__mart_scadenze_per_anno",
+      "dataset": "mef_riepilogo_emissioni_scadenze",
+      "table": "mart_scadenze_per_anno",
+      "location": {
+        "type": "gcs",
+        "path": "gs://dataciviclab-mart/debito_pubblico_intelligence/mef_riepilogo_emissioni_scadenze/2026/mart_scadenze_per_anno.parquet",
+        "multi_file": false
+      }
+    },
+    {
       "slug": "mef_scadenze_isin__mart_rollover_12m",
       "dataset": "mef_scadenze_isin",
       "table": "mart_rollover_12m",
@@ -612,7 +714,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204104Z_28b23d32",
+        "run_id": "20261012T100903Z_3f4eb0d7",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -627,12 +729,12 @@
         },
         "output_bytes": {
           "raw": 8683,
-          "clean": 1798,
+          "clean": 1824,
           "mart": 1789
         },
-        "started_at": "2026-10-01T20:41:04.219527+00:00",
-        "finished_at": "2026-10-01T20:41:05.883094+00:00",
-        "duration_seconds": 1.664
+        "started_at": "2026-10-12T10:09:03.521765+00:00",
+        "finished_at": "2026-10-12T10:09:05.109337+00:00",
+        "duration_seconds": 1.588
       }
     },
     {
@@ -643,7 +745,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204105Z_9a9c7113",
+        "run_id": "20261012T100905Z_46cd4238",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -661,9 +763,9 @@
           "clean": 30872,
           "mart": 30872
         },
-        "started_at": "2026-10-01T20:41:05.936068+00:00",
-        "finished_at": "2026-10-01T20:41:08.494218+00:00",
-        "duration_seconds": 2.558
+        "started_at": "2026-10-12T10:09:05.159129+00:00",
+        "finished_at": "2026-10-12T10:09:07.442172+00:00",
+        "duration_seconds": 2.283
       }
     },
     {
@@ -674,7 +776,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204108Z_1f844490",
+        "run_id": "20261012T100907Z_4b42fb5c",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -692,9 +794,9 @@
           "clean": 319560,
           "mart": 231671
         },
-        "started_at": "2026-10-01T20:41:08.551830+00:00",
-        "finished_at": "2026-10-01T20:41:13.782741+00:00",
-        "duration_seconds": 5.231
+        "started_at": "2026-10-12T10:09:07.493481+00:00",
+        "finished_at": "2026-10-12T10:09:14.503523+00:00",
+        "duration_seconds": 7.01
       }
     },
     {
@@ -705,7 +807,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204113Z_f4a5447a",
+        "run_id": "20261012T100914Z_c826a619",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -723,9 +825,39 @@
           "clean": 969,
           "mart": 968
         },
-        "started_at": "2026-10-01T20:41:13.863654+00:00",
-        "finished_at": "2026-10-01T20:41:17.896254+00:00",
-        "duration_seconds": 4.033
+        "started_at": "2026-10-12T10:09:14.581606+00:00",
+        "finished_at": "2026-10-12T10:09:18.360025+00:00",
+        "duration_seconds": 3.778
+      }
+    },
+    {
+      "id": "mef_riepilogo_emissioni_scadenze",
+      "source_id": "mef_tesoro",
+      "status": "ok",
+      "label": "mef_riepilogo_emissioni_scadenze",
+      "detail": "anno 2026 — mart: si",
+      "action": "",
+      "run": {
+        "run_id": "20261012T100918Z_283dc303",
+        "year": 2026,
+        "status": "SUCCESS",
+        "quality_score": {
+          "raw": 100,
+          "clean": 100,
+          "mart": 100
+        },
+        "output_rows": {
+          "clean": 166,
+          "mart": 102
+        },
+        "output_bytes": {
+          "raw": 9121,
+          "clean": 3801,
+          "mart": 4053
+        },
+        "started_at": "2026-10-12T10:09:18.409795+00:00",
+        "finished_at": "2026-10-12T10:09:39.138200+00:00",
+        "duration_seconds": 20.728
       }
     },
     {
@@ -736,7 +868,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204117Z_952dbad1",
+        "run_id": "20261012T100939Z_ca021fa9",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -745,18 +877,18 @@
           "mart": 100
         },
         "output_rows": {
-          "raw": 466,
-          "clean": 466,
-          "mart": 504
+          "raw": 470,
+          "clean": 470,
+          "mart": 508
         },
         "output_bytes": {
-          "raw": 43331,
-          "clean": 10094,
-          "mart": 11700
+          "raw": 43690,
+          "clean": 10190,
+          "mart": 11852
         },
-        "started_at": "2026-10-01T20:41:17.948295+00:00",
-        "finished_at": "2026-10-01T20:41:21.433508+00:00",
-        "duration_seconds": 3.485
+        "started_at": "2026-10-12T10:09:39.199873+00:00",
+        "finished_at": "2026-10-12T10:09:42.754696+00:00",
+        "duration_seconds": 3.555
       }
     },
     {
@@ -767,7 +899,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204121Z_8dd8f341",
+        "run_id": "20261012T100942Z_c9e2a774",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -781,13 +913,13 @@
           "mart": 84
         },
         "output_bytes": {
-          "raw": 2020,
-          "clean": 1076,
-          "mart": 1083
+          "raw": 2017,
+          "clean": 1069,
+          "mart": 1073
         },
-        "started_at": "2026-10-01T20:41:21.493713+00:00",
-        "finished_at": "2026-10-01T20:41:24.439612+00:00",
-        "duration_seconds": 2.946
+        "started_at": "2026-10-12T10:09:42.811834+00:00",
+        "finished_at": "2026-10-12T10:09:45.623190+00:00",
+        "duration_seconds": 2.811
       }
     },
     {
@@ -798,7 +930,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204124Z_b764ab46",
+        "run_id": "20261012T100945Z_47d276cb",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -807,18 +939,18 @@
           "mart": 100
         },
         "output_rows": {
-          "raw": 61,
-          "clean": 61,
-          "mart": 61
+          "raw": 94,
+          "clean": 94,
+          "mart": 94
         },
         "output_bytes": {
-          "raw": 1591,
-          "clean": 1210,
-          "mart": 1220
+          "raw": 2444,
+          "clean": 1336,
+          "mart": 1343
         },
-        "started_at": "2026-10-01T20:41:24.487372+00:00",
-        "finished_at": "2026-10-01T20:41:26.450008+00:00",
-        "duration_seconds": 1.963
+        "started_at": "2026-10-12T10:09:45.668221+00:00",
+        "finished_at": "2026-10-12T10:09:47.691602+00:00",
+        "duration_seconds": 2.023
       }
     },
     {
@@ -829,7 +961,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261001T204126Z_140a2608",
+        "run_id": "20261012T100947Z_111240e4",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -847,9 +979,9 @@
           "clean": 32617,
           "mart": 32634
         },
-        "started_at": "2026-10-01T20:41:26.498278+00:00",
-        "finished_at": "2026-10-01T20:41:29.223690+00:00",
-        "duration_seconds": 2.725
+        "started_at": "2026-10-12T10:09:47.737597+00:00",
+        "finished_at": "2026-10-12T10:09:50.434321+00:00",
+        "duration_seconds": 2.697
       }
     }
   ],
@@ -888,6 +1020,12 @@
             "semantic_type": "month"
           },
           {
+            "slug": "mef_riepilogo_emissioni_scadenze",
+            "name": "Mef Riepilogo Emissioni Scadenze",
+            "column": "anno",
+            "semantic_type": "year"
+          },
+          {
             "slug": "mef_vita_media",
             "name": "Mef Vita Media",
             "column": "mese",
@@ -901,7 +1039,7 @@
           }
         ],
         "types": {
-          "year": 2,
+          "year": 3,
           "month": 2
         }
       }
