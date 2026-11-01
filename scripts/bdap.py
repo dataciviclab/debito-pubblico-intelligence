@@ -127,21 +127,44 @@ def build_consuntivo():
     (`interessi_pagati`, `rimborsi_pagati`, `altri_oneri_debito`): niente filtri
     sul testo di `categoria`, che cambia nome nel tempo (fino al 2022 era
     "INTERESSI PASSIVI E REDDITI DA CAPITALE").
+
+    Fallback: se il mart pubblicato non ha ancora quelle colonne (pubblicazione
+    precedente alla fix di bilancio-pubblico), si torna a raggruppare per
+    `categoria` su `mart_pagamenti_missione_categoria`. Così l'ordine di merge
+    dei due repo non conta.
     """
     con = duckdb.connect()
-    urls = _mart_urls(con, "bdap_pagamenti_stato", "mart_costo_debito_bilancio")
-    if not urls:
-        print("[bdap] consuntivo: nessun mart disponibile su GCS (skip)")
-        return None
 
-    rows = con.execute(f"""
-        SELECT anno,
-               round(interessi_pagati / 1e6, 1) AS interessi_mln,
-               round(rimborsi_pagati / 1e6, 1) AS rimborsi_mln,
-               round(spesa_missione_debito / 1e6, 1) AS totale_mln
-        FROM read_parquet({urls!r})
-        ORDER BY anno
-    """).fetchall()
+    rows = None
+    urls = _mart_urls(con, "bdap_pagamenti_stato", "mart_costo_debito_bilancio")
+    if urls:
+        try:
+            rows = con.execute(f"""
+                SELECT anno,
+                       round(interessi_pagati / 1e6, 1) AS interessi_mln,
+                       round(rimborsi_pagati / 1e6, 1) AS rimborsi_mln,
+                       round(spesa_missione_debito / 1e6, 1) AS totale_mln
+                FROM read_parquet({urls!r})
+                ORDER BY anno
+            """).fetchall()
+        except Exception as exc:
+            print(f"[bdap] mart costo debito non leggibile ({str(exc)[:80]}) → fallback su categoria")
+            rows = None
+
+    if rows is None:
+        urls = _mart_urls(con, "bdap_pagamenti_stato", "mart_pagamenti_missione_categoria")
+        if not urls:
+            print("[bdap] consuntivo: nessun mart disponibile su GCS (skip)")
+            return None
+        rows = con.execute(f"""
+            SELECT esercizio_finanziario AS anno,
+                   round(sum(CASE WHEN upper(categoria) LIKE '%INTERESSI%' THEN totale_pagato END)/1e6, 1) AS interessi_mln,
+                   round(sum(CASE WHEN upper(categoria) LIKE '%RIMBORSO%' THEN totale_pagato END)/1e6, 1) AS rimborsi_mln,
+                   round(sum(totale_pagato)/1e6, 1) AS totale_mln
+            FROM read_parquet({urls!r})
+            WHERE upper(missione) LIKE '%DEBITO%'
+            GROUP BY 1 ORDER BY 1
+        """).fetchall()
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     out = BUILD_DIR / "bdap_consuntivo_debito.csv"
