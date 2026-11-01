@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 from lab_connectors.duckdb.queries import load_mart_table, query_clean
 from lab_connectors.registry import load_registry
@@ -24,10 +25,20 @@ def _q(slug: str, sql: str, year: int = 2026):
     return query_clean(slug, sql, [year], prefix=PREFIX)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def load_mart(slug: str, table: str, year: int = 2026):
-    """Legge un mart pubblicato. Il path contract vive in lab-connectors."""
-    return load_mart_table(slug, table, year, prefix=PREFIX, registry=_registry)
+    """Legge un mart pubblicato. Il path contract vive in lab-connectors.
+
+    Se il mart non è ancora pubblicato (primo merge, compose non ancora girato)
+    restituisce un DataFrame vuoto invece di propagare il 404: ogni pagina ha
+    già la sua guardia sull'empty e mostra un messaggio, non uno stack trace.
+    TTL corto (5 min) così la pagina si accende da sola appena il mart compare.
+    """
+    try:
+        return load_mart_table(slug, table, year, prefix=PREFIX, registry=_registry)
+    except Exception as exc:
+        print(f"[sources] mart non disponibile: {slug}/{table} — {str(exc)[:120]}")
+        return pd.DataFrame()
 
 
 # ── Mart (contratto) ─────────────────────────────────────────────
