@@ -27,9 +27,9 @@
     "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
     "periodo": "2026-08",
     "tipo": "rapporto",
-    "rapporto_pct": 100.7,
-    "n_anomalie": 0,
-    "anomalie_dettaglio": "rapporto 100.7%",
+    "rapporto_pct": 6147.7,
+    "n_anomalie": 1,
+    "anomalie_dettaglio": "rapporto 6147.7%",
     "csv": "reconcile_mef_vs_fpi.csv"
   },
   {
