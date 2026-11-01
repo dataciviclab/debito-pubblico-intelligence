@@ -87,7 +87,7 @@ if not df_spread.empty:
         ))
         fig.add_hline(y=0, line_dash="dash", line_color="gray")
         fig.update_layout(
-            yaxis_title="Spread (punti base)",
+            yaxis_title="Spread (punti percentuali)",
             xaxis_title="Mese",
             height=400,
             margin={"t": 30},
@@ -96,9 +96,26 @@ if not df_spread.empty:
     except ImportError:
         st.line_chart(df_spread.set_index("mese")["spread"])
 
-    # KPI spread
+    # KPI spread — i valori della serie sono in punti percentuali (0,89 = 89 pb)
     latest_spread = df_spread["spread"].iloc[-1]
     avg_spread = df_spread["spread"].mean()
+    # Se un paese "core" paga più dell'Italia, è una notizia: dirlo coi dati.
+    try:
+        ultimo = df.groupby("paese")["rendimento_pct"].last()
+        if "FR" in ultimo and "IT" in ultimo and ultimo["FR"] > ultimo["IT"]:
+            st.caption(
+                f"All'ultimo mese disponibile la Francia rende **{ultimo['FR']:.2f}%** "
+                f"contro il **{ultimo['IT']:.2f}%** italiano: lo spread IT-DE non racconta più tutto."
+            )
+    except Exception:
+        pass
+
     col1, col2 = st.columns(2)
-    col1.metric("Spread attuale", f"{latest_spread:.0f} pb")
-    col2.metric("Spread medio", f"{avg_spread:.0f} pb")
+    col1.metric("Spread attuale", f"{latest_spread:.2f} pp",
+                delta=f"{latest_spread * 100:.0f} pb", delta_color="off")
+    col2.metric("Spread medio", f"{avg_spread:.2f} pp",
+                delta=f"{avg_spread * 100:.0f} pb", delta_color="off")
+    st.caption(
+        "Serie mensile di convergenza Eurostat (`irt_lt_mcby_m`), non il differenziale "
+        "intraday dei titoli a 10 anni."
+    )
