@@ -23,6 +23,7 @@ DASHBOARD = Path(__file__).parent.parent / "dashboard"
         "06_FPI",
         "07_SQL",
         "08_Costo_Debito",
+        "09_Detentori",
     ],
 )
 def test_page_syntax(page: str) -> None:

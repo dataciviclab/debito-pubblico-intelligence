@@ -45,7 +45,8 @@ unisce in un'unica vista:
 4. **Scenari di sostenibilità** — slider interattivi per i, g, sp con 7 preset + scenario custom
 
 Le altre pagine: Spread BTP-Bund, Composizione titoli, Scadenze dettagliate, **Costo del debito**
-(interessi annui, rimborsi 12m, costo del rifinanziamento), Trend Storico (1861–oggi), Flussi
+(interessi annui, rimborsi 12m, costo del rifinanziamento), **Chi detiene il debito**
+(quote per detentore dal 1988), Trend Storico (1861–oggi), Flussi
 Banca d'Italia, Query SQL.
 
 ```bash
