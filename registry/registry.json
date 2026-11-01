@@ -188,11 +188,11 @@
     {
       "slug": "mef_composizione",
       "name": "Mef Composizione",
-      "description": "",
+      "description": "Composizione dei Titoli di Stato in circolazione, serie mensile dall'archivio MEF (un CSV per mese). Grano: mese × tipologia, con `famiglia` stabile per aggregare voci che cambiano nome e `sottoinsieme` per le righe \"di cui ...\".\n",
       "source": "",
       "source_id": "mef_tesoro",
       "period": {
-        "start": 2026,
+        "start": 2021,
         "end": 2026
       },
       "tags": [
@@ -205,7 +205,19 @@
       "category": "finanza-pubblica",
       "columns": [
         {
+          "name": "data_ref",
+          "type": "DATE",
+          "role": "dimension",
+          "description": ""
+        },
+        {
           "name": "tipologia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "famiglia",
           "type": "VARCHAR",
           "role": "dimension",
           "description": ""
@@ -220,6 +232,18 @@
           "name": "valore_mln_eur",
           "type": "DOUBLE",
           "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "sottoinsieme",
+          "type": "BOOLEAN",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "aggregato",
+          "type": "BOOLEAN",
+          "role": "dimension",
           "description": ""
         }
       ],
@@ -292,15 +316,21 @@
           "description": ""
         },
         {
-          "name": "importo_mld",
+          "name": "importo_mln",
           "type": "DOUBLE",
           "role": "metric",
           "description": ""
         },
         {
-          "name": "importo_abs_mld",
+          "name": "importo_abs_mln",
           "type": "DOUBLE",
           "role": "metric",
+          "description": ""
+        },
+        {
+          "name": "grano",
+          "type": "VARCHAR",
+          "role": "dimension",
           "description": ""
         }
       ],
@@ -388,6 +418,25 @@
           "type": "DATE",
           "role": "dimension",
           "description": ""
+        },
+        {
+          "name": "classe_strumento",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "tipo_famiglia",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": ""
+        },
+        {
+          "name": "stato",
+          "type": "VARCHAR",
+          "role": "dimension",
+          "description": "",
+          "semantic_type": "country_code"
         }
       ],
       "location": {
@@ -714,7 +763,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160402Z_f6b3e92f",
+        "run_id": "20261101T200842Z_b134f910",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -729,12 +778,12 @@
         },
         "output_bytes": {
           "raw": 8683,
-          "clean": 1809,
+          "clean": 1832,
           "mart": 1792
         },
-        "started_at": "2026-11-01T16:04:02.928826+00:00",
-        "finished_at": "2026-11-01T16:04:04.569256+00:00",
-        "duration_seconds": 1.64
+        "started_at": "2026-11-01T20:08:42.226978+00:00",
+        "finished_at": "2026-11-01T20:08:43.616264+00:00",
+        "duration_seconds": 1.389
       }
     },
     {
@@ -745,7 +794,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160404Z_c8149d6a",
+        "run_id": "20261101T200843Z_b51efe59",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -763,9 +812,9 @@
           "clean": 30964,
           "mart": 30964
         },
-        "started_at": "2026-11-01T16:04:04.606248+00:00",
-        "finished_at": "2026-11-01T16:04:06.745715+00:00",
-        "duration_seconds": 2.139
+        "started_at": "2026-11-01T20:08:43.654802+00:00",
+        "finished_at": "2026-11-01T20:08:45.527086+00:00",
+        "duration_seconds": 1.872
       }
     },
     {
@@ -776,7 +825,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160406Z_9f2a5934",
+        "run_id": "20261101T200845Z_a7ba9112",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -794,9 +843,9 @@
           "clean": 320033,
           "mart": 232143
         },
-        "started_at": "2026-11-01T16:04:06.782573+00:00",
-        "finished_at": "2026-11-01T16:04:11.405415+00:00",
-        "duration_seconds": 4.623
+        "started_at": "2026-11-01T20:08:45.566814+00:00",
+        "finished_at": "2026-11-01T20:08:48.953786+00:00",
+        "duration_seconds": 3.387
       }
     },
     {
@@ -807,7 +856,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160411Z_ee4f373e",
+        "run_id": "20261101T200849Z_062867f9",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -816,18 +865,18 @@
           "mart": 100
         },
         "output_rows": {
-          "raw": 15,
-          "clean": 15,
-          "mart": 15
+          "raw": 924,
+          "clean": 924,
+          "mart": 924
         },
         "output_bytes": {
-          "raw": 560,
-          "clean": 969,
-          "mart": 968
+          "raw": 51659,
+          "clean": 6269,
+          "mart": 5985
         },
-        "started_at": "2026-11-01T16:04:11.456425+00:00",
-        "finished_at": "2026-11-01T16:04:15.264340+00:00",
-        "duration_seconds": 3.808
+        "started_at": "2026-11-01T20:08:49.019054+00:00",
+        "finished_at": "2026-11-01T20:09:31.013031+00:00",
+        "duration_seconds": 41.994
       }
     },
     {
@@ -838,7 +887,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160415Z_bb4f00fa",
+        "run_id": "20261101T200931Z_e6bc92e8",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -848,16 +897,16 @@
         },
         "output_rows": {
           "clean": 166,
-          "mart": 102
+          "mart": 92
         },
         "output_bytes": {
-          "raw": 9121,
-          "clean": 3801,
-          "mart": 4053
+          "raw": 9131,
+          "clean": 4034,
+          "mart": 3923
         },
-        "started_at": "2026-11-01T16:04:15.302802+00:00",
-        "finished_at": "2026-11-01T16:04:38.567776+00:00",
-        "duration_seconds": 23.265
+        "started_at": "2026-11-01T20:09:31.057019+00:00",
+        "finished_at": "2026-11-01T20:09:49.961404+00:00",
+        "duration_seconds": 18.904
       }
     },
     {
@@ -868,7 +917,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160438Z_1a62ee3a",
+        "run_id": "20261101T200950Z_d8682293",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -882,13 +931,13 @@
           "mart": 508
         },
         "output_bytes": {
-          "raw": 43690,
-          "clean": 10190,
-          "mart": 11852
+          "raw": 43857,
+          "clean": 11612,
+          "mart": 13715
         },
-        "started_at": "2026-11-01T16:04:38.610609+00:00",
-        "finished_at": "2026-11-01T16:04:41.430985+00:00",
-        "duration_seconds": 2.82
+        "started_at": "2026-11-01T20:09:50.019309+00:00",
+        "finished_at": "2026-11-01T20:09:52.545782+00:00",
+        "duration_seconds": 2.526
       }
     },
     {
@@ -899,7 +948,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160441Z_e5b83a9c",
+        "run_id": "20261101T200952Z_755c32d5",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -917,9 +966,9 @@
           "clean": 1069,
           "mart": 1073
         },
-        "started_at": "2026-11-01T16:04:41.491761+00:00",
-        "finished_at": "2026-11-01T16:04:43.645380+00:00",
-        "duration_seconds": 2.154
+        "started_at": "2026-11-01T20:09:52.595097+00:00",
+        "finished_at": "2026-11-01T20:09:54.521794+00:00",
+        "duration_seconds": 1.927
       }
     },
     {
@@ -930,7 +979,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160443Z_2026deb4",
+        "run_id": "20261101T200954Z_33999a65",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -948,9 +997,9 @@
           "clean": 1336,
           "mart": 1343
         },
-        "started_at": "2026-11-01T16:04:43.678463+00:00",
-        "finished_at": "2026-11-01T16:04:45.468367+00:00",
-        "duration_seconds": 1.79
+        "started_at": "2026-11-01T20:09:54.560843+00:00",
+        "finished_at": "2026-11-01T20:09:56.200283+00:00",
+        "duration_seconds": 1.639
       }
     },
     {
@@ -961,7 +1010,7 @@
       "detail": "anno 2026 — mart: si",
       "action": "",
       "run": {
-        "run_id": "20261101T160445Z_ae381db7",
+        "run_id": "20261101T200956Z_6e49611c",
         "year": 2026,
         "status": "SUCCESS",
         "quality_score": {
@@ -979,9 +1028,9 @@
           "clean": 32617,
           "mart": 32634
         },
-        "started_at": "2026-11-01T16:04:45.500476+00:00",
-        "finished_at": "2026-11-01T16:04:48.929003+00:00",
-        "duration_seconds": 3.429
+        "started_at": "2026-11-01T20:09:56.241611+00:00",
+        "finished_at": "2026-11-01T20:09:58.963046+00:00",
+        "duration_seconds": 2.721
       }
     }
   ],
@@ -997,10 +1046,16 @@
             "name": "Eurostat Rendimento 10Y",
             "column": "paese",
             "semantic_type": "country_code"
+          },
+          {
+            "slug": "mef_scadenze_isin",
+            "name": "Mef Scadenze Isin",
+            "column": "stato",
+            "semantic_type": "country_code"
           }
         ],
         "types": {
-          "country_code": 1
+          "country_code": 2
         }
       },
       "Tempo": {
