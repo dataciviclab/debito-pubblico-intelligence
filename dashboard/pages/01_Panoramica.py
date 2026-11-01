@@ -28,6 +28,7 @@ CHIAVI = {
     "rollover_12m_pct": "rollover_12m",
     "vita_media_anni": "vita_media",
     "quota_banca_italia_pct": "banca_italia_pct",
+    "tasso_implicito_pct": "tasso_implicito",
 }
 
 st.set_page_config(page_title="Debito Pubblico · Dashboard", page_icon="🇮🇹", layout="wide")
@@ -267,26 +268,32 @@ def _project(d0, i, g, sp, years):
     return path
 
 
-# Base: ultimo OCPI debito/PIL
+# Base: ultimo OCPI per debito/PIL e crescita nominale
 try:
     df_serie = load_serie_storiche()
     df_base = df_serie[df_serie["serie"] == "D"].sort_values("anno").tail(1)
     anno_base = int(df_base.iloc[0]["anno"])
     d0 = float(df_base.iloc[0]["valore"])
+    df_o = df_serie[df_serie["serie"] == "O"].sort_values("anno").tail(1)
+    g_base = float(df_o.iloc[0]["valore"]) if not df_o.empty else 2.5
 except Exception:
-    anno_base, d0 = 2024, 137.0
+    anno_base, d0, g_base = 2024, 137.0, 2.5
+
+# Baseline dai dati, non da costanti: i = tasso implicito OCPI, sp = saldo primario.
+# I preset sono differenze rispetto a questa base, così invecchiano con i dati.
+i_base = float(sig.get("tasso_implicito", 2.9))
+sp_base = float(sig.get("saldo_pil", 0.7))
 
 HORIZON = 5
 
-# Ipotesi preset: (nome, i%, g%, sp%)
 SCEN_PRESETS = [
-    ("stato_attuale", 2.89, 2.54, 0.7),
-    ("crescita_forte", 2.89, 3.50, 0.7),
-    ("crescita_debole", 2.89, 1.00, 0.7),
-    ("tassi_alti", 3.50, 2.54, 0.7),
-    ("avanzo_primario_2", 2.89, 2.54, 2.0),
-    ("avanzo_primario_3", 2.89, 2.54, 3.0),
-    ("stress", 3.50, 1.00, 0.0),
+    ("stato_attuale", i_base, g_base, sp_base),
+    ("crescita_forte", i_base, g_base + 1.0, sp_base),
+    ("crescita_debole", i_base, max(g_base - 1.5, 0.0), sp_base),
+    ("tassi_alti", i_base + 0.6, g_base, sp_base),
+    ("avanzo_primario_2", i_base, g_base, 2.0),
+    ("avanzo_primario_3", i_base, g_base, 3.0),
+    ("stress", i_base + 0.6, max(g_base - 1.5, 0.0), 0.0),
 ]
 
 SCEN_COLORS = {
@@ -309,14 +316,19 @@ def _project(d0, i, g, sp, years):
         path.append(round(d * 100, 1))
     return path
 
+st.caption(
+    f"Baseline dai dati ({anno_base}): i = {i_base:.2f}% (tasso implicito OCPI), "
+    f"g = {g_base:.2f}% (crescita nominale), sp = {sp_base:+.1f}% PIL (saldo primario)."
+)
+
 # Slider
 col1, col2, col3 = st.columns(3)
 with col1:
-    i_custom = st.slider("Tasso interesse (i) %", 0.0, 8.0, 2.89, 0.01)
+    i_custom = st.slider("Tasso interesse (i) %", 0.0, 8.0, round(i_base, 2), 0.01)
 with col2:
-    g_custom = st.slider("Crescita nominale (g) %", 0.0, 8.0, 2.54, 0.01)
+    g_custom = st.slider("Crescita nominale (g) %", 0.0, 8.0, round(g_base, 2), 0.01)
 with col3:
-    sp_custom = st.slider("Saldo primario (sp) % PIL", -5.0, 5.0, 0.7, 0.1)
+    sp_custom = st.slider("Saldo primario (sp) % PIL", -5.0, 5.0, round(sp_base, 1), 0.1)
 
 horizon = 5
 years = list(range(anno_base, anno_base + horizon + 1))
