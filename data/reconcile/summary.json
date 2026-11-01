@@ -25,11 +25,11 @@
     "id": "mef_vs_fpi_titoli",
     "nome": "MEF titoli vs FPI titoli",
     "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
-    "periodo": "2026-07",
+    "periodo": "2026-08",
     "tipo": "rapporto",
-    "rapporto_pct": 100.2,
+    "rapporto_pct": 100.7,
     "n_anomalie": 0,
-    "anomalie_dettaglio": "rapporto 100.2%",
+    "anomalie_dettaglio": "rapporto 100.7%",
     "csv": "reconcile_mef_vs_fpi.csv"
   },
   {
@@ -47,12 +47,12 @@
     "id": "fabbisogno_vs_stock",
     "nome": "Fabbisogno vs variazione stock",
     "fonti": "Banca d'Italia FPI",
-    "periodo": "2023-08–2026-07",
+    "periodo": "2023-09–2026-08",
     "tipo": "identita_contabile",
     "n_confrontati": 36,
-    "sfa_cumulato_mld": 19.3,
+    "sfa_cumulato_mld": 18.8,
     "n_anomalie": 0,
-    "anomalie_dettaglio": "SFA cumulato +19.3 mld su 36 mesi",
+    "anomalie_dettaglio": "SFA cumulato +18.8 mld su 36 mesi",
     "csv": "reconcile_fabbisogno_vs_stock.csv"
   },
   {
