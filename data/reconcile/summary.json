@@ -25,11 +25,11 @@
     "id": "mef_vs_fpi_titoli",
     "nome": "MEF titoli vs FPI titoli",
     "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
-    "periodo": "2026-08",
+    "periodo": "2026-08 (MEF) / 2026-08 (FPI)",
     "tipo": "rapporto",
-    "rapporto_pct": 6147.7,
-    "n_anomalie": 1,
-    "anomalie_dettaglio": "rapporto 6147.7%",
+    "rapporto_pct": 101.0,
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "rapporto 101.0%",
     "csv": "reconcile_mef_vs_fpi.csv"
   },
   {

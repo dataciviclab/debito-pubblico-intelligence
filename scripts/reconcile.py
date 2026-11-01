@@ -182,16 +182,9 @@ def run():
         # Totale titoli Tesoro in circolazione (mln EUR, stessa unità di FPI)
         import csv as _csv
 
-        total_mef_rows = con.execute(f"""
-            SELECT sum(valore_mln_eur) FROM read_parquet('{mef_comp_parquet}')
-            WHERE tipologia = 'Totale'
-        """).fetchall()
-        total_mef = total_mef_rows[0][0] if total_mef_rows and total_mef_rows[0][0] else None
-        if total_mef is None:
-            print("[reconcile] MEF composizione: Totale non trovato")
-            return
-        print(f"[reconcile] totale titoli Tesoro in circolazione (MEF): {total_mef:,.0f} mln EUR")
-
+        # `mef_composizione` e' una serie mensile: si prende UN mese, non la somma
+        # di 68 snapshot (dava un rapporto del 6000%). E si prende lo stesso mese
+        # di FPI, altrimenti si confrontano due date diverse spacciandole per una.
         fpi_f3 = con.execute("""
             SELECT data, sum(valore_mln_eur)
             FROM read_parquet('out/data/mart/fpi_debito_pa/2026/mart_debito_ap.parquet')
@@ -199,32 +192,50 @@ def run():
                OR (tavola_nome = 'debito_ap_strumenti' AND codice = 'S13.F32')
             GROUP BY data ORDER BY data DESC LIMIT 1
         """).fetchall()
-        if fpi_f3 and fpi_f3[0][1]:
-            fpi_titoli = fpi_f3[0][1]
-            ratio = total_mef / fpi_titoli * 100 if fpi_titoli else None
-            print(f"[reconcile] FPI titoli AP (F31+F32, {fpi_f3[0][0]}): {fpi_titoli:,.0f} mln EUR")
-            if ratio:
-                print(f"[reconcile] rapporto MEF/FPI titoli: {ratio:.1f}% "
-                      f"(atteso ~100%: il Tesoro emette quasi tutti i titoli AP)")
+        if not (fpi_f3 and fpi_f3[0][1]):
+            print("[reconcile] FPI titoli non disponibili (skip caso 3)")
+            return
+
+        fpi_data = fpi_f3[0][0]
+        total_mef_rows = con.execute(f"""
+            SELECT data_ref, valore_mln_eur FROM read_parquet('{mef_comp_parquet}')
+            WHERE tipologia = 'Totale' AND data_ref <= DATE '{fpi_data}'
+            ORDER BY data_ref DESC LIMIT 1
+        """).fetchall()
+        if not (total_mef_rows and total_mef_rows[0][1]):
+            print("[reconcile] MEF composizione: Totale non trovato per il mese FPI")
+            return
+        mef_data, total_mef = total_mef_rows[0]
+        print(f"[reconcile] MEF titoli al {mef_data}: {total_mef:,.0f} mln EUR")
+
+        fpi_titoli = fpi_f3[0][1]
+        ratio = total_mef / fpi_titoli * 100 if fpi_titoli else None
+        print(f"[reconcile] FPI titoli AP (F31+F32, {fpi_data}): {fpi_titoli:,.0f} mln EUR")
+        if ratio:
+            print(f"[reconcile] rapporto MEF/FPI titoli: {ratio:.1f}% "
+                  f"(atteso ~100%: il Tesoro emette quasi tutti i titoli AP)")
         out = RECON_DIR / "reconcile_mef_vs_fpi.csv"
         with open(out, "w", encoding="utf-8", newline="") as f:
             w = _csv.writer(f)
-            w.writerow(["data", "mef_titoli_mln_eur", "fpi_titoli_mln_eur", "rapporto_pct"])
-            w.writerow([fpi_f3[0][0] if fpi_f3 else None, round(total_mef, 0),
+            w.writerow(["data_mef", "data_fpi", "mef_titoli_mln_eur", "fpi_titoli_mln_eur", "rapporto_pct"])
+            w.writerow([mef_data, fpi_data, round(total_mef, 0),
                         round(fpi_titoli, 0) if fpi_titoli else None,
                         round(ratio, 2) if ratio else None])
         print(f"[reconcile] OK {out}")
 
-        n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{MART_MEF_SCAD!s}')").fetchall()
+        n_isin_rows = con.execute(f"""
+            SELECT count(DISTINCT isin) FROM read_parquet('{MART_MEF_SCAD!s}')
+            WHERE classe_strumento = 'Titoli di Stato' AND stato = 'in_circolazione'
+        """).fetchall()
         n_isin = n_isin_rows[0][0] if n_isin_rows else 0
-        print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione")
+        print(f"[reconcile] scadenze MEF: {n_isin} titoli in circolazione")
 
         if ratio is not None:
             summary.append({
                 "id": "mef_vs_fpi_titoli",
                 "nome": "MEF titoli vs FPI titoli",
                 "fonti": "MEF Tesoro composizione, Banca d'Italia FPI",
-                "periodo": str(fpi_f3[0][0])[:7] if fpi_f3 else "?",
+                "periodo": f"{str(mef_data)[:7]} (MEF) / {str(fpi_data)[:7]} (FPI)",
                 "tipo": "rapporto",
                 "rapporto_pct": round(ratio, 1),
                 "n_anomalie": 0 if 95 <= ratio <= 105 else 1,
