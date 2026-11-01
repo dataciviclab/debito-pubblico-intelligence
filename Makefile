@@ -43,10 +43,16 @@ reconcile: bdap
 signals:
 	python3 scripts/signals.py
 
+# --- Compose (incroci tra dataset) -------------------------------------------
+
+.PHONY: compose
+compose:
+	$(TOOLKIT) run --config compose/debt-service/dataset.yml
+
 # --- Pipeline completa: toolkit + analitici + test ----------------------------
 
 .PHONY: all
-all: run-all reconcile signals test
+all: run-all reconcile signals compose test
 
 # --- Test --------------------------------------------------------------------
 

@@ -1,0 +1,58 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "debt_service"
+  source_id: "dataciviclab_composite"
+  tags: [finanza-pubblica, debito, costo, rifinanziamento, compose]
+  category: finanza-pubblica
+  description: >
+    Compose del costo del debito: incrocia i titoli in circolazione
+    (mef_scadenze_isin) con i tassi correnti (eurostat_tassi_breve,
+    eurostat_rendimento_10y). Due marts: interessi annui per famiglia e
+    costo del rifinanziamento dei titoli in scadenza nei prossimi 12 mesi.
+    Le ipotesi di tasso sono colonne, non costanti nel codice.
+  years: [2026]
+  time_coverage:
+    start_year: 2026
+    end_year: 2026
+
+# Compose mart-only: nessun raw/clean proprio. I SQL leggono i mart dei
+# dataset fratelli via support type: file (directory multi-anno + glob).
+# Prerequisito: make run-all prima di make compose.
+
+support:
+  - name: scadenze
+    type: file
+    path: "../../out/data/mart/mef_scadenze_isin"
+  - name: tassi
+    type: file
+    path: "../../out/data/mart/eurostat_tassi_breve"
+  - name: rendimento
+    type: file
+    path: "../../out/data/mart/eurostat_rendimento_10y"
+
+mart:
+  tables:
+    - name: "mart_interessi_annui"
+      sql: "sql/mart_interessi_annui.sql"
+    - name: "mart_debt_service_12m"
+      sql: "sql/mart_debt_service_12m.sql"
+  required_tables:
+    - "mart_interessi_annui"
+    - "mart_debt_service_12m"
+  validate:
+    table_rules:
+      mart_interessi_annui:
+        required_columns: [famiglia, stock_mln_eur, tasso_usato_pct, interessi_mln_eur, ipotesi]
+        primary_key: [famiglia]
+        min_rows: 8
+        not_null: [famiglia, stock_mln_eur, interessi_mln_eur]
+      mart_debt_service_12m:
+        required_columns: [famiglia, n_titoli, rimborsi_mln_eur, cedola_media_pct, tasso_corrente_pct, delta_interessi_mln_eur, ipotesi]
+        primary_key: [famiglia]
+        min_rows: 3
+        not_null: [famiglia, rimborsi_mln_eur]
+
+validation:
+  fail_on_error: true

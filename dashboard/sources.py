@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 from lab_connectors.duckdb.queries import load_mart_table, query_clean
 from lab_connectors.registry import load_registry
@@ -24,10 +25,20 @@ def _q(slug: str, sql: str, year: int = 2026):
     return query_clean(slug, sql, [year], prefix=PREFIX)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def load_mart(slug: str, table: str, year: int = 2026):
-    """Legge un mart pubblicato. Il path contract vive in lab-connectors."""
-    return load_mart_table(slug, table, year, prefix=PREFIX, registry=_registry)
+    """Legge un mart pubblicato. Il path contract vive in lab-connectors.
+
+    Se il mart non è ancora pubblicato (primo merge, compose non ancora girato)
+    restituisce un DataFrame vuoto invece di propagare il 404: ogni pagina ha
+    già la sua guardia sull'empty e mostra un messaggio, non uno stack trace.
+    TTL corto (5 min) così la pagina si accende da sola appena il mart compare.
+    """
+    try:
+        return load_mart_table(slug, table, year, prefix=PREFIX, registry=_registry)
+    except Exception as exc:
+        print(f"[sources] mart non disponibile: {slug}/{table} — {str(exc)[:120]}")
+        return pd.DataFrame()
 
 
 # ── Mart (contratto) ─────────────────────────────────────────────
@@ -51,6 +62,17 @@ def load_composizione(year: int = 2026):
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_serie_storiche(year: int = 2026):
     return load_mart("ocpi_serie_storiche", "mart_serie_storiche", year)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_debt_service(table: str, year: int = 2026):
+    """Mart del compose debt_service: mart_interessi_annui | mart_debt_service_12m."""
+    return load_mart("debt_service", table, year)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_rendimento_10y(year: int = 2026):
+    return load_mart("eurostat_rendimento_10y", "mart_rendimento_10y", year)
 
 
 # ── Clean (esplorazione) ─────────────────────────────────────────

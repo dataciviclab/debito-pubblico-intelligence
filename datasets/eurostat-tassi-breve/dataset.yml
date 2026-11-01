@@ -1,0 +1,56 @@
+root: "../../out"
+schema_version: 1
+
+dataset:
+  name: "eurostat_tassi_breve"
+  source_id: "eurostat"
+  tags: [finanza-pubblica, tassi, euribor, mercato-monetario, eurostat]
+  category: finanza-pubblica
+  description: >
+    Tassi del mercato monetario dell'area euro (1, 3, 6 e 12 mesi), mensili.
+    Servono a dare un tasso corrente a BOT e CCTeu nel calcolo del costo del
+    debito: senza questi, la cedola dei CCTeu resta il solo spread e il costo
+    viene sottostimato di ~4 mld/anno.
+  years: [2026]
+  time_coverage:
+    start_year: 1990
+    end_year: 2026
+
+raw:
+  output_policy: overwrite
+  sources:
+    - name: "eurostat_irt_st_m"
+      type: "sdmx"
+      args:
+        agency: "ESTAT"
+        flow: "irt_st_m"
+        filters:
+          geo: "EA"
+          int_rt: ["IRT_M3", "IRT_M6", "IRT_M12"]
+          freq: "M"
+      primary: true
+
+clean:
+  sql: "sql/clean.sql"
+  read:
+    source: "auto"
+    mode: "latest"
+    delim: ","
+    encoding: "utf-8"
+    header: true
+  required_columns: [mese, scadenza_mesi, tasso_pct]
+  validate:
+    not_null: [mese, scadenza_mesi, tasso_pct]
+    min_rows: 200
+
+mart:
+  tables:
+    - name: "mart_tassi_breve"
+      sql: "sql/mart_tassi_breve.sql"
+  required_tables: ["mart_tassi_breve"]
+  validate:
+    table_rules:
+      mart_tassi_breve:
+        not_null: [mese, scadenza_mesi, tasso_pct]
+        primary_key: [mese, scadenza_mesi]
+        min_rows: 200

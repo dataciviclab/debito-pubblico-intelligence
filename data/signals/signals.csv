@@ -16,3 +16,5 @@ quota_banca_italia_pct,detentori,Quota del debito AP detenuta dalla Banca d'Ital
 quota_non_residenti_pct,detentori,Quota del debito AP detenuta da non residenti,36.511,%,2026-07-31
 titoli_in_circolazione_mld_eur,debito,Titoli di Stato in circolazione,2705.6,mld EUR,2026-09-30
 cedola_media_ponderata_pct,costo,Cedola media ponderata sullo stock (solo titoli con cedola fissa),2.85,%,2026-09-30
+interessi_annui_titoli_mld_eur,costo,"Interessi annui sui titoli di Stato in circolazione (stima: BOT a tasso 12m, CCTeu Euribor 6m + spread)",82.3,mld EUR,2026-09-30
+costo_rifinanziamento_12m_mld_eur,costo,Costo annuo aggiuntivo di rifinanziare i titoli in scadenza nei prossimi 12 mesi ai tassi correnti,9.4,mld EUR,2026-09-30
