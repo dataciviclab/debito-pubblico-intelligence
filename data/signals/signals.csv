@@ -1,13 +1,18 @@
-segnale,descrizione,categoria,valore
-debito_totale_ap_mln_eur,debito totale AP (mln EUR),debito,3207247.3
-debito_totale_ap_mm_pct,variazione debito m/m (%),debito,0.823
-rendimento_10y_pct,rendimento 10Y (%),costo,3.881
-debito_pil_pct,debito/PIL (%),sostenibilita,137.1
-i_g_pp,i-g (pp),sostenibilita,0.348
-saldo_primario_pil_pct,saldo primario (% PIL),sostenibilita,0.7
-spesa_interessi_pil_pct,spesa interessi (% PIL),sostenibilita,3.8
-rollover_12m_pct,debito in scadenza prossimi 12m (%),rischio,12.7
-rollover_12m_mld_eur,debito in scadenza prossimi 12m (mld EUR),rischio,363.5
-vita_media_anni,vita media residua titoli (anni),rischio,7.0
-spread_btp_bund_pp,spread BTP-Bund 10Y (pp),costo,0.81
-quota_banca_italia_pct,debito AP detenuto da Bd'Italia (%),detentori,16.7
+segnale,categoria,descrizione,valore,unita,data_riferimento
+debito_totale_ap_mln_eur,debito,Debito lordo Amministrazioni Pubbliche,3200847.7,mln EUR,2026-08-31
+debito_variazione_mensile_pct,debito,Variazione mensile del debito AP,-0.19,%,2026-08-31
+debito_pil_pct,sostenibilita,Debito/PIL Amministrazioni Pubbliche,136.7,% PIL,2025
+debito_pil_variazione_pp,sostenibilita,Variazione annua del debito/PIL,2.4,pp,2025
+i_g_pp,sostenibilita,Differenza tra interessi impliciti e crescita nominale,0.348,pp,2025
+saldo_primario_pil_pct,sostenibilita,Saldo primario,0.7,% PIL,2025
+spesa_interessi_pil_pct,sostenibilita,Spesa per interessi,3.8,% PIL,2025
+tasso_implicito_pct,sostenibilita,Tasso di interesse implicito sul debito,2.892,%,2025
+rendimento_10y_pct,costo,Rendimento BTP a 10 anni,4.362,%,2026-09
+spread_btp_bund_pp,costo,Spread BTP-Bund a 10 anni,0.889,pp,2026-09
+rollover_12m_pct,rischio,Quota di titoli in scadenza nei prossimi 12 mesi,13.4,%,2026-09-30
+rollover_12m_mld_eur,rischio,Titoli in scadenza nei prossimi 12 mesi,366.1,mld EUR,2026-09-30
+vita_media_anni,rischio,Vita media residua dei titoli di Stato,6.96,anni,2026-09
+quota_banca_italia_pct,detentori,Quota del debito AP detenuta dalla Banca d'Italia,16.568,%,2026-07-31
+quota_non_residenti_pct,detentori,Quota del debito AP detenuta da non residenti,36.511,%,2026-07-31
+titoli_in_circolazione_mld_eur,debito,Titoli di Stato in circolazione,2705.6,mld EUR,2026-09-30
+cedola_media_ponderata_pct,costo,Cedola media ponderata sullo stock (solo titoli con cedola fissa),2.85,%,2026-09-30

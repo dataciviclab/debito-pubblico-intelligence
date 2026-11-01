@@ -50,6 +50,9 @@ jobs:
       - name: Reconcile
         run: make reconcile
 
+      - name: Signals
+        run: make signals
+
       - name: Test
         run: make test
 

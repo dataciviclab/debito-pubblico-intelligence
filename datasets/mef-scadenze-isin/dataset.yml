@@ -27,9 +27,9 @@ clean:
     delim: ","
     encoding: utf-8
     header: true
-  required_columns: [isin, tipo, emissione, scadenza, cedola_pct, valuta, circolante_riv_eur, circolante_nom_eur, data_ref]
+  required_columns: [isin, tipo, tipo_famiglia, emissione, scadenza, cedola_pct, valuta, circolante_riv_eur, circolante_nom_eur, data_ref, classe_strumento, stato]
   validate:
-    not_null: [isin, scadenza]
+    not_null: [isin, scadenza, classe_strumento, tipo_famiglia, stato]
     min_rows: 300
 
 mart:
@@ -42,5 +42,5 @@ mart:
   validate:
     table_rules:
       mart_scadenze_isin:
-        not_null: [isin, scadenza]
+        not_null: [isin, scadenza, classe_strumento, tipo_famiglia, stato]
         min_rows: 300

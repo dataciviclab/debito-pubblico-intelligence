@@ -30,19 +30,23 @@ check:
 
 # --- Script analitici (legacy) -----------------------------------------------
 # reconcile.py produce CSV + summary.json per la dashboard.
+# signals.py calcola i KPI dai mart (data/signals/signals.csv).
 # bdap.py produce data/build/bdap_*.csv da GCS.
 
-.PHONY: bdap reconcile
+.PHONY: bdap reconcile signals
 bdap:
 	python3 scripts/bdap.py
 
 reconcile: bdap
 	python3 scripts/reconcile.py
 
+signals:
+	python3 scripts/signals.py
+
 # --- Pipeline completa: toolkit + analitici + test ----------------------------
 
 .PHONY: all
-all: run-all reconcile test
+all: run-all reconcile signals test
 
 # --- Test --------------------------------------------------------------------
 
