@@ -26,6 +26,7 @@ pages = {
         st.Page("pages/02_Spread.py", title="Spread BTP-Bund", icon="📈"),
         st.Page("pages/03_Composizione.py", title="Composizione", icon="🧩"),
         st.Page("pages/04_Scadenze.py", title="Scadenze", icon="⏰"),
+        st.Page("pages/08_Costo_Debito.py", title="Costo del debito", icon="💸"),
         st.Page("pages/05_Trend_Storico.py", title="Trend Storico", icon="📜"),
         st.Page("pages/06_FPI.py", title="Flussi Banca d'Italia", icon="🏦"),
     ],

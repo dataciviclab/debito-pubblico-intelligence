@@ -44,7 +44,9 @@ unisce in un'unica vista:
 3. **Profilo temporale** — scadenze 12 anni + top 10 ISIN in circolazione
 4. **Scenari di sostenibilità** — slider interattivi per i, g, sp con 7 preset + scenario custom
 
-Le altre pagine: Spread BTP-Bund, Composizione titoli, Scadenze dettagliate, Trend Storico (1861–oggi), Flussi Banca d'Italia, Query SQL.
+Le altre pagine: Spread BTP-Bund, Composizione titoli, Scadenze dettagliate, **Costo del debito**
+(interessi annui, rimborsi 12m, costo del rifinanziamento), Trend Storico (1861–oggi), Flussi
+Banca d'Italia, Query SQL.
 
 ```bash
 cd dashboard && streamlit run app.py
@@ -65,7 +67,7 @@ Il sistema accende spie su cinque dimensioni, tutte da dati ufficiali:
 ## Come funziona
 
 ```
-toolkit (fetch→clean→mart) → reconcile → dashboard
+toolkit (fetch→clean→mart) → compose → reconcile → signals → dashboard
 ```
 
 ```bash
@@ -94,6 +96,7 @@ consuntivo pagamenti) e produce CSV per il fusion layer.
 | Banca d'Italia — BDS FPI | debito AP per sottosettore/strumento/detentore, fabbisogno, scadenze (mensile) |
 | Eurostat — `gov_10dd_edpt1` | debito/PIL e stock in milioni di euro (standard Maastricht/EDP) |
 | Eurostat — `irt_lt_mcby_m` | rendimento a lungo termine (10Y), Italia e Germania |
+| Eurostat — `irt_st_m` | tassi del mercato monetario (3/6/12 mesi), per BOT e CCTeu |
 | OCPI (Università Cattolica) | 26 serie storiche 1861-2025 (debito, PIL, i−g, saldo primario, interessi) |
 | MEF — Dipartimento del Tesoro | composizione e scadenze dei titoli di Stato (ISIN-level), vita media |
 | BDAP Stato (MEF-RGS) | entrate e spese dello Stato per titolo/missione/macroaggregato (via catalogo GCS) |
