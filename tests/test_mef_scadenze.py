@@ -88,15 +88,29 @@ class TestMartScadenzeIsin:
         assert n == 0, f"{n} righe con € non normalizzato nella famiglia"
 
     def test_copertura_cedole(self):
-        """Non-BOT in circolazione senza cedola: solo il residuo Ispa (<3% dello stock)."""
+        """Non-BOT in circolazione senza cedola: solo Ispa ed EMTN, sotto l'1%.
+
+        EMTN (14,3 mld) e Ispa (2,25 mld) sono nel file MEF senza cedola
+        pubblicata: non e' un errore di parsing ma un limite della fonte, quindi
+        non vanno "corretti". Il test blocca qualunque altra famiglia senza
+        cedola — prima si assumeva "solo Ispa" e il numero era sottostimato.
+        """
         con = self._con()
-        senza, stock = con.execute(
-            f"SELECT round(sum(CASE WHEN cedola_pct IS NULL THEN circolante_nom_eur ELSE 0 END)/1e9, 2), "
-            f"round(sum(circolante_nom_eur)/1e9, 2) FROM read_parquet('{MART}') "
+        righe = con.execute(
+            f"SELECT tipo_famiglia, round(sum(circolante_nom_eur)/1e9, 3) FROM read_parquet('{MART}') "
+            "WHERE classe_strumento = 'Titoli di Stato' AND stato = 'in_circolazione' "
+            "AND NOT starts_with(tipo, 'BOT') AND cedola_pct IS NULL "
+            "GROUP BY 1 ORDER BY 2 DESC"
+        ).fetchall()
+        famiglie = {fam for fam, _ in righe}
+        assert famiglie <= {"Ispa", "EMTN"}, f"famiglie senza cedola non attese: {famiglie}"
+        senza = sum(valore for _, valore in righe)
+        stock = con.execute(
+            f"SELECT round(sum(circolante_nom_eur)/1e9, 3) FROM read_parquet('{MART}') "
             "WHERE classe_strumento = 'Titoli di Stato' AND stato = 'in_circolazione' "
             "AND NOT starts_with(tipo, 'BOT')"
-        ).fetchone()
-        assert senza / stock < 0.03, f"cedole mancanti {senza} mld su {stock} ({senza / stock:.1%})"
+        ).fetchone()[0]
+        assert senza / stock < 0.01, f"cedole mancanti {senza} mld su {stock} ({senza / stock:.2%})"
 
     def test_stock_riconcilia_con_composizione(self):
         """Stock ISIN in circolazione vs composizione MEF: entro il 3%.
