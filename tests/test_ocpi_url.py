@@ -40,13 +40,27 @@ def test_href_con_spazi_diventa_scaricabile():
     assert url.endswith("ocpi-OCPI%20-%20Serie%20Storiche%20marzo%202026.xlsx")
 
 
-def test_url_prodotto_non_solleva_invalid_url():
-    """``urlopen`` rifiuta i control characters: la richiesta deve costruirsi."""
-    import urllib.request
+def test_path_accettato_da_http_client():
+    """La validazione che ha fatto fallire ``urlopen``, senza rete.
+
+    ``InvalidURL: URL can't contain control characters`` nasce in
+    ``http.client`` quando costruisce la request line, non in
+    ``urllib.request.Request``: verificare qui il path prodotto significa
+    testare il guasto reale invece della sua ombra.
+    """
+    import http.client
 
     url = _load_preprocess()._absolute_url(HREF_CON_SPAZI)
-    # Richiesta costruita ma non inviata: valida se urlopen non solleva.
-    urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    path = urllib.parse.urlsplit(url).path
+
+    connessione = http.client.HTTPConnection("example.invalid")
+    try:
+        connessione.putrequest("GET", path)  # solleva InvalidURL se non codificato
+    finally:
+        connessione.close()
+
+    assert " " not in path
+    assert urllib.parse.unquote(path).endswith(" - Serie Storiche marzo 2026.xlsx")
 
 
 def test_forme_di_href_equivalenti():
