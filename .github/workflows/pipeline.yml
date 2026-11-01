@@ -44,6 +44,9 @@ jobs:
           TOOLKIT_ALLOW_SCRIPT_SOURCE: "1"
         run: make run-all
 
+      - name: Compose
+        run: make compose
+
       - name: BDAP
         run: make bdap
 

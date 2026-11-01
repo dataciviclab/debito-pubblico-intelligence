@@ -174,6 +174,25 @@ def main() -> None:
         segnale("cedola_media_ponderata_pct", "costo", "Cedola media ponderata sullo stock (solo titoli con cedola fissa)",
                 "%", r[0][0], r[0][1])
 
+    # ── Costo del debito (compose debt_service) ───────────────────────
+    r = query(p("debt_service", "mart_interessi_annui"), """
+        SELECT round(sum(interessi_mln_eur) / 1000, 1), max(data_ref)
+        FROM read_parquet('{t}')
+    """)
+    if r and r[0][0]:
+        segnale("interessi_annui_titoli_mld_eur", "costo", "Interessi annui sui titoli di Stato in circolazione (stima: BOT a tasso 12m, CCTeu Euribor 6m + spread)",
+                "mld EUR", r[0][0], r[0][1])
+
+    r = query(p("debt_service", "mart_debt_service_12m"), """
+        SELECT round(sum(delta_interessi_mln_eur) / 1000, 1),
+               round(sum(rimborsi_mln_eur) / 1000, 1),
+               max(data_ref)
+        FROM read_parquet('{t}')
+    """)
+    if r and r[0][0] is not None:
+        segnale("costo_rifinanziamento_12m_mld_eur", "costo", "Costo annuo aggiuntivo di rifinanziare i titoli in scadenza nei prossimi 12 mesi ai tassi correnti",
+                "mld EUR", r[0][0], r[0][2])
+
     if not righe:
         print("[signals] nessun segnale calcolato: pipeline non eseguita?")
         sys.exit(1)
