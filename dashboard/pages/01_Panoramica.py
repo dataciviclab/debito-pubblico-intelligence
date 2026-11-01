@@ -6,21 +6,29 @@ Sezione 3: Profilo temporale (scadenze 12 anni + top ISIN)
 Sezione 4: What-if scenari (slider interattivi)
 """
 
-from datetime import date
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
-from sources import (
-    query_debito_pil,
-    query_fpi,
-    query_ocpi,
-    query_rendimento,
-    query_scadenze,
-    query_vita_media,
-)
+from sources import load_rollover, load_scadenze, load_serie_storiche
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 RECON_DIR = ROOT / "data" / "reconcile"
+SIGNALS_CSV = ROOT / "data" / "signals" / "signals.csv"
+
+# Nome nel contratto signals.csv -> chiave usata in questa pagina.
+CHIAVI = {
+    "debito_totale_ap_mln_eur": "debito_ap",
+    "debito_pil_pct": "debito_pil",
+    "debito_pil_variazione_pp": "debito_pil_delta",
+    "rendimento_10y_pct": "rendimento_10y",
+    "spread_btp_bund_pp": "spread",
+    "spesa_interessi_pil_pct": "interessi_pil",
+    "saldo_primario_pil_pct": "saldo_pil",
+    "rollover_12m_pct": "rollover_12m",
+    "vita_media_anni": "vita_media",
+    "quota_banca_italia_pct": "banca_italia_pct",
+}
 
 st.set_page_config(page_title="Debito Pubblico · Dashboard", page_icon="🇮🇹", layout="wide")
 
@@ -28,94 +36,32 @@ st.set_page_config(page_title="Debito Pubblico · Dashboard", page_icon="🇮�
 # SEZIONE 1 — STATUS BOARD
 # ═══════════════════════════════════════════════════════════════════
 
-st.title("🇮🇹 Debito Pubblico Italiano")
-st.caption(f"Aggiornato al {date.today().isoformat()} · Fonti: Banca d'Italia, Eurostat, OCPI, MEF Tesoro")
-
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _load_signals():
-    """KPI principali da GCS via sources.py."""
-    sig = {}
+    """KPI da data/signals/signals.csv, scritto da scripts/signals.py.
 
-    # Debito/PIL da Eurostat
-    try:
-        df = query_debito_pil("SELECT anno, debito_pil_pct FROM clean_input WHERE settore='S13' ORDER BY anno DESC LIMIT 2")
-        if not df.empty:
-            sig["debito_pil"] = float(df.iloc[0]["debito_pil_pct"])
-            if len(df) > 1:
-                sig["debito_pil_delta"] = float(df.iloc[0]["debito_pil_pct"] - df.iloc[1]["debito_pil_pct"])
-    except Exception:
-        pass
-
-    # Rendimento 10Y da Eurostat
-    try:
-        df = query_rendimento("SELECT paese, rendimento_pct FROM clean_input WHERE paese IN ('IT','DE') ORDER BY mese DESC")
-        if not df.empty:
-            it = df[df["paese"] == "IT"]
-            de = df[df["paese"] == "DE"]
-            if not it.empty:
-                sig["rendimento_10y"] = float(it.iloc[0]["rendimento_pct"])
-            if not it.empty and not de.empty:
-                sig["spread"] = round(float(it.iloc[0]["rendimento_pct"] - de.iloc[0]["rendimento_pct"]), 2)
-    except Exception:
-        pass
-
-    # Interessi/PIL e Saldo primario da OCPI
-    try:
-        df_i = query_ocpi("SELECT valore FROM clean_input WHERE serie = 'I' ORDER BY anno DESC LIMIT 1")
-        if not df_i.empty:
-            sig["interessi_pil"] = float(df_i.iloc[0]["valore"])
-        df_g = query_ocpi("SELECT valore FROM clean_input WHERE serie = 'G' ORDER BY anno DESC LIMIT 1")
-        if not df_g.empty:
-            sig["saldo_pil"] = float(df_g.iloc[0]["valore"])
-    except Exception:
-        pass
-
-    # Rollover 12m da scadenze
-    try:
-        df = query_scadenze("""
-            SELECT
-                sum(circolante_nom_eur) AS tot,
-                sum(CASE WHEN scadenza < date_add(data_ref, INTERVAL 12 MONTH) THEN circolante_nom_eur ELSE 0 END) AS r12
-            FROM clean_input WHERE scadenza >= data_ref
-        """)
-        if not df.empty and df.iloc[0]["tot"] > 0:
-            sig["rollover_12m"] = round(float(df.iloc[0]["r12"] / df.iloc[0]["tot"] * 100), 1)
-    except Exception:
-        pass
-
-    # Debito AP da FPI
-    try:
-        df = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1")
-        if not df.empty:
-            sig["debito_ap"] = float(df.iloc[0]["valore_mln_eur"])
-    except Exception:
-        pass
-
-    # Bd'Italia detiene % da FPI
-    try:
-        df_det = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE codice='S13.MGD.S121' ORDER BY data DESC LIMIT 1")
-        df_ap = query_fpi("SELECT valore_mln_eur FROM clean_input WHERE tavola_nome='debito_ap_sottosettori' AND codice='S13.MGD' ORDER BY data DESC LIMIT 1")
-        if not df_det.empty and not df_ap.empty and df_ap.iloc[0]["valore_mln_eur"] > 0:
-            sig["banca_italia_pct"] = round(float(df_det.iloc[0]["valore_mln_eur"] / df_ap.iloc[0]["valore_mln_eur"] * 100), 1)
-    except Exception:
-        pass
-
-    # Vita media residua da MEF
-    try:
-        df = query_vita_media("SELECT round(max(vita_media_mesi)/12.0, 1) AS anni FROM clean_input WHERE tipologia='TOTALE'")
-        if not df.empty and df.iloc[0]["anni"] is not None:
-            sig["vita_media"] = float(df.iloc[0]["anni"])
-    except Exception:
-        pass
-
-    return sig
+    La pagina non ricalcola i numeri: un KPI assente è meglio di un KPI
+    calcolato con una formula leggermente diversa da quella dei mart.
+    Restituisce (valori, data_riferimento_piu_recente).
+    """
+    if not SIGNALS_CSV.exists():
+        return {}, None
+    df = pd.read_csv(SIGNALS_CSV)
+    valori = dict(zip(df["segnale"], df["valore"]))
+    aggiornato = str(df["data_riferimento"].max()) if "data_riferimento" in df else None
+    return {k: valori[n] for n, k in CHIAVI.items() if n in valori}, aggiornato
 
 
-sig = _load_signals()
+sig, aggiornato = _load_signals()
+
+st.title("🇮🇹 Debito Pubblico Italiano")
+st.caption(
+    f"Dati al {aggiornato or 'n/d'} · Fonti: Banca d'Italia, Eurostat, OCPI, MEF Tesoro"
+)
 
 if not sig:
-    st.warning("Dati non disponibili. Esegui `make run-all` per generare i mart.")
+    st.warning("Segnali non disponibili. Esegui `make all` (o `make signals`) per generarli.")
     st.stop()
 
 
@@ -240,7 +186,7 @@ if recon_summary:
                     continue
                 st.markdown(f"**{f.stem.replace('reconcile_', '').replace('_', ' ').title()}**")
                 try:
-                    st.dataframe(pd.read_csv(f), use_container_width=True, hide_index=True)
+                    st.dataframe(pd.read_csv(f), width='stretch', hide_index=True)
                 except Exception as e:
                     st.error(f"Errore: {e}")
 else:
@@ -259,24 +205,17 @@ col_left, col_right = st.columns([2, 1])
 with col_left:
     st.subheader("Scadenze 12 anni")
     try:
-        df_scad = query_scadenze("""
-            SELECT cast(year(scadenza) AS INT) AS anno,
-                   round(sum(circolante_nom_eur)/1e6, 0) AS mln_eur
-            FROM clean_input
-            WHERE scadenza >= data_ref
-            GROUP BY 1 ORDER BY 1
-            LIMIT 12
-        """)
+        df_scad = load_rollover().head(12)
 
         if not df_scad.empty:
             import plotly.graph_objects as go
 
             fig = go.Figure()
             fig.add_trace(go.Bar(
-                x=df_scad["anno"].astype(str),
-                y=df_scad["mln_eur"],
+                x=df_scad["anno_scadenza"].astype(str),
+                y=df_scad["scadenza_mln_eur"],
                 marker_color="#1f77b4",
-                text=df_scad["mln_eur"].apply(lambda x: f"€{x:,.0f}"),
+                text=df_scad["scadenza_mln_eur"].apply(lambda x: f"€{x:,.0f}"),
                 textposition="outside",
             ))
             fig.update_layout(
@@ -294,16 +233,18 @@ with col_left:
 with col_right:
     st.subheader("Top 10 ISIN")
     try:
-        df_isin = query_scadenze("""
-            SELECT isin, tipo,
-                   round(circolante_nom_eur/1e6, 0) AS mln
-            FROM clean_input
-            WHERE scadenza >= data_ref
-            ORDER BY circolante_nom_eur DESC
-            LIMIT 10
-        """)
+        df_scad = load_scadenze()
+        df_scad = df_scad[
+            (df_scad["classe_strumento"] == "Titoli di Stato")
+            & (df_scad["stato"] == "in_circolazione")
+        ]
+        df_isin = df_scad.nlargest(10, "circolante_nom_eur")[
+            ["isin", "tipo", "circolante_nom_eur"]
+        ].copy()
+        df_isin["mln"] = (df_isin["circolante_nom_eur"] / 1e6).round(0).astype("int64")
+        df_isin = df_isin[["isin", "tipo", "mln"]]
         if not df_isin.empty:
-            st.dataframe(df_isin, use_container_width=True, hide_index=True)
+            st.dataframe(df_isin, width='stretch', hide_index=True)
     except Exception as e:
         st.error(f"Errore: {e}")
 
@@ -328,7 +269,8 @@ def _project(d0, i, g, sp, years):
 
 # Base: ultimo OCPI debito/PIL
 try:
-    df_base = query_ocpi("SELECT anno, valore FROM clean_input WHERE serie = 'D' ORDER BY anno DESC LIMIT 1")
+    df_serie = load_serie_storiche()
+    df_base = df_serie[df_serie["serie"] == "D"].sort_values("anno").tail(1)
     anno_base = int(df_base.iloc[0]["anno"])
     d0 = float(df_base.iloc[0]["valore"])
 except Exception:
@@ -440,4 +382,4 @@ rows.append({
     "Δ": f"{path_custom[-1] - path_custom[0]:+.1f} pp",
 })
 
-st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)

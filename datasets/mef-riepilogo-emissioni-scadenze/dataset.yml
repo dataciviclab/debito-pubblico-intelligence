@@ -7,9 +7,10 @@ dataset:
   tags: [finanza-pubblica, debito, titoli, emissioni, scadenze, isin, mef]
   category: finanza-pubblica
   description: >
-    Riepilogo MEF Tesoro emissioni e scadenze Titoli di Stato (BTP, BOT):
-    grano ISIN × anno × sezione (EMISSIONI/SCADENZE). Ponte flusso BDAP 034
-    ↔ stock/scadenze titoli. Pattern DPI: preprocess.py per CSV irregolari.
+    Riepilogo MEF Tesoro emissioni e scadenze Titoli di Stato (BTP, BOT), valori
+    in milioni di euro. Grano: fino al 2024 una riga annuale per tipologia
+    (`isin = 'AGGREGATO'`), dal 2025 una riga per ISIN; la colonna `grano`
+    distingue i due formati. Ponte flusso BDAP 034 ↔ stock/scadenze titoli.
   years: [2026]
   time_coverage:
     start_year: 2020
@@ -31,9 +32,9 @@ clean:
   read:
     source: config_only
     mode: latest
-  required_columns: [anno, tipologia, sezione, isin, scadenza, importo_mld]
+  required_columns: [anno, tipologia, sezione, isin, scadenza, importo_mln, importo_abs_mln, grano]
   validate:
-    not_null: [anno, sezione, isin]
+    not_null: [anno, sezione, isin, grano]
     min_rows: 50
 
 mart:
@@ -49,10 +50,10 @@ mart:
     table_rules:
       mart_per_anno_tipologia:
         min_rows: 4
-        required_columns: [anno, tipologia, sezione, totale_mld]
+        required_columns: [anno, tipologia, sezione, grano, totale_mln, totale_mln_segnato]
       mart_scadenze_per_anno:
         min_rows: 5
-        required_columns: [anno, tipologia, isin, scadenza]
+        required_columns: [anno, tipologia, isin, scadenza, importo_mln]
 
 validation:
   fail_on_error: true

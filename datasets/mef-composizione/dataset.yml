@@ -5,7 +5,14 @@ dataset:
   source_id: "mef_tesoro"
   tags: [finanza-pubblica, debito, titoli, composizione, mef]
   category: finanza-pubblica
+  description: >
+    Composizione dei Titoli di Stato in circolazione, serie mensile dall'archivio
+    MEF (un CSV per mese). Grano: mese × tipologia, con `famiglia` stabile per
+    aggregare voci che cambiano nome e `sottoinsieme` per le righe "di cui ...".
   years: [2026]
+  time_coverage:
+    start_year: 2021
+    end_year: 2026
 raw:
   output_policy: overwrite
   sources:
@@ -16,8 +23,8 @@ raw:
 clean:
   sql: "sql/clean.sql"
   read: { source: auto, mode: latest, delim: ",", encoding: utf-8, header: true }
-  required_columns: [tipologia, colonna, valore_mln_eur]
-  validate: { not_null: [tipologia], min_rows: 10 }
+  required_columns: [data_ref, tipologia, famiglia, colonna, valore_mln_eur, sottoinsieme, aggregato]
+  validate: { not_null: [data_ref, tipologia, famiglia, colonna], min_rows: 500 }
 mart:
   tables:
     - name: "mart_composizione"
@@ -25,4 +32,7 @@ mart:
   required_tables: ["mart_composizione"]
   validate:
     table_rules:
-      mart_composizione: { not_null: [tipologia], min_rows: 10 }
+      mart_composizione:
+        not_null: [data_ref, tipologia, famiglia, valore_mln_eur]
+        primary_key: [data_ref, tipologia]
+        min_rows: 500

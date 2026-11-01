@@ -25,9 +25,15 @@ MONTHS = {
 }
 
 
-def mef_csv_links(page_path: str) -> list[str]:
-    """Scarica la pagina HTML e estrae i link ai CSV."""
+def mef_csv_links(page_path: str, year: int | None = None) -> list[str]:
+    """Scarica la pagina HTML e estrae i link ai CSV.
+
+    Con `year` usa il filtro `?selezione-anno=` del portale DT, che espone
+    l'archivio storico (una pagina per anno).
+    """
     url = f"{MEF_BASE}/{page_path}/"
+    if year is not None:
+        url = f"{url}?selezione-anno={year}"
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=30) as resp:
         html = resp.read().decode("utf-8", "ignore")
@@ -47,6 +53,14 @@ def file_date(base: str):
     if m:
         return (int(m.group(3)), int(m.group(2)), int(m.group(1)))
     return None
+
+
+def download_csv(link: str, timeout: int = 60):
+    """Scarica un CSV MEF da path relativo ('/export/...') o URL assoluto."""
+    url = link if link.startswith("http") else f"https://www.dt.mef.gov.it{link}"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read()
 
 
 def download_latest_csv(page_path: str):
@@ -90,6 +104,23 @@ def parse_amount(s: str):
         return float(s)
     except ValueError:
         return None
+
+
+def parse_amount_leading(s: str):
+    """Numero italiano all'inizio della cella, ignorando le etichette che seguono.
+
+    Il MEF mescola numero e descrizione nella stessa cella: la cedola arriva come
+    '0,550  Cedola reale' (BTP Italia / BTP€i) o come '3,250 "step up"' (BTP Valore).
+    `parse_amount` su queste stringhe ritorna None.
+    """
+    s = (s or "").strip()
+    if not s:
+        return None
+    m = re.match(r"(-?\d[\d.]*)(?:,(\d+))?", s)
+    if not m:
+        return None
+    token = f"{m.group(1)},{m.group(2)}" if m.group(2) else m.group(1)
+    return parse_amount(token)
 
 
 def parse_date(s: str):

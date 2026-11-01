@@ -250,6 +250,8 @@ def run():
             SELECT strftime(scadenza, '%Y-%m'), round(sum(circolante_nom_eur)/1e6, 0)
             FROM read_parquet('out/data/mart/mef_scadenze_isin/2026/mart_scadenze_isin.parquet')
             WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)
+              AND classe_strumento = 'Titoli di Stato'
+              AND stato = 'in_circolazione'
             GROUP BY 1 ORDER BY 1
         """).fetchall()
 

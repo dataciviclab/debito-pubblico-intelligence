@@ -9,7 +9,7 @@ quindi NON hardcodiamo i filename — li leggiamo dalla pagina.
 
 Usage: python preprocess.py raw_input.csv [anno_min] [anno_max]
 
-Output: anno, tipologia, sezione, isin, scadenza, tipo_tenore, importo_mld
+Output: anno, tipologia, sezione, isin, scadenza, tipo_tenore, importo_mln
 
 Fonte: dt.mef.gov.it riepilogo_emissioni
 """
@@ -122,7 +122,7 @@ def parse_isin_format(text: str, tipologia: str, anno: int) -> list[dict]:
                 "isin": isin,
                 "scadenza": scadenza.isoformat() if scadenza else "",
                 "tipo_tenore": tipo_tenore or "",
-                "importo_mld": "" if importo is None else f"{importo:.3f}",
+                "importo_mln": "" if importo is None else f"{importo:.3f}",
             }
         )
     return records
@@ -169,6 +169,10 @@ def parse_aggregate_format(text: str, tipologia: str, anno: int) -> list[dict]:
         return []
 
     emissioni, scadenze, _netta = annual_vals
+    # La fonte dichiara "mln.€". Il segno delle SCADENZE si allinea al formato
+    # ISIN (2025+), dove i rimborsi sono flussi in uscita e quindi negativi:
+    # cosi' sommare le due sezioni da' l'emissione netta anche per gli anni
+    # aggregati.
     records.append(
         {
             "anno": str(anno),
@@ -177,7 +181,7 @@ def parse_aggregate_format(text: str, tipologia: str, anno: int) -> list[dict]:
             "isin": "AGGREGATO",
             "scadenza": "",
             "tipo_tenore": "TOTALE",
-            "importo_mld": f"{emissioni:.3f}",
+            "importo_mln": f"{abs(emissioni):.3f}",
         }
     )
     records.append(
@@ -188,7 +192,7 @@ def parse_aggregate_format(text: str, tipologia: str, anno: int) -> list[dict]:
             "isin": "AGGREGATO",
             "scadenza": "",
             "tipo_tenore": "TOTALE",
-            "importo_mld": f"{scadenze:.3f}",
+            "importo_mln": f"{-abs(scadenze):.3f}",
         }
     )
     return records
@@ -243,7 +247,7 @@ def main() -> None:
         "isin",
         "scadenza",
         "tipo_tenore",
-        "importo_mld",
+        "importo_mln",
     ]
     with open(output, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
