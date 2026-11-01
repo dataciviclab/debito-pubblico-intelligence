@@ -182,9 +182,12 @@ def run():
         # Totale titoli Tesoro in circolazione (mln EUR, stessa unità di FPI)
         import csv as _csv
 
+        # `mef_composizione` e' una serie mensile: il confronto va fatto
+        # sull'ultimo mese, non sommando 68 snapshot (dava un rapporto del 6000%).
         total_mef_rows = con.execute(f"""
-            SELECT sum(valore_mln_eur) FROM read_parquet('{mef_comp_parquet}')
+            SELECT valore_mln_eur FROM read_parquet('{mef_comp_parquet}')
             WHERE tipologia = 'Totale'
+              AND data_ref = (SELECT max(data_ref) FROM read_parquet('{mef_comp_parquet}'))
         """).fetchall()
         total_mef = total_mef_rows[0][0] if total_mef_rows and total_mef_rows[0][0] else None
         if total_mef is None:
@@ -215,9 +218,12 @@ def run():
                         round(ratio, 2) if ratio else None])
         print(f"[reconcile] OK {out}")
 
-        n_isin_rows = con.execute(f"SELECT count(*) FROM read_parquet('{MART_MEF_SCAD!s}')").fetchall()
+        n_isin_rows = con.execute(f"""
+            SELECT count(DISTINCT isin) FROM read_parquet('{MART_MEF_SCAD!s}')
+            WHERE classe_strumento = 'Titoli di Stato' AND stato = 'in_circolazione'
+        """).fetchall()
         n_isin = n_isin_rows[0][0] if n_isin_rows else 0
-        print(f"[reconcile] scadenze MEF: {n_isin} ISIN in circolazione")
+        print(f"[reconcile] scadenze MEF: {n_isin} titoli in circolazione")
 
         if ratio is not None:
             summary.append({

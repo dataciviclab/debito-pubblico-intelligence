@@ -181,6 +181,17 @@ class TestReconcileSummary:
             data = json.load(f)
         assert len(data) >= 4, f"meno di 4 casi: {len(data)}"
 
+    def test_rapporto_titoli_in_scala(self):
+        """MEF vs FPI titoli deve stare ~100%: se la composizione viene sommata
+        su tutti i mesi (serie dal 2021) il rapporto esplode a ~6000%."""
+        if _skip_if_missing(RECON_SUMMARY):
+            pytest.skip("summary.json non presente")
+        with open(RECON_SUMMARY, encoding="utf-8") as f:
+            data = json.load(f)
+        caso = next((c for c in data if c["id"] == "mef_vs_fpi_titoli"), None)
+        assert caso is not None, "caso mef_vs_fpi_titoli assente"
+        assert 90 <= caso["rapporto_pct"] <= 110, f"rapporto {caso['rapporto_pct']}% fuori scala"
+
     def test_cases_have_required_fields(self):
         if _skip_if_missing(RECON_SUMMARY):
             pytest.skip("summary.json non presente")
