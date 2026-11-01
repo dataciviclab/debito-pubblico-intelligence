@@ -9,10 +9,27 @@ import csv
 import io
 import re
 import sys
+import urllib.parse
 import urllib.request
 
 OCPI_PAGE = "https://osservatoriocpi.unicatt.it/ocpi-servizi-serie-storiche"
 USER_AGENT = "Mozilla/5.0"
+
+
+def _absolute_url(href: str) -> str:
+    """Risolve l'href della pagina in URL assoluto percent-encoded.
+
+    Gli href del sito contengono spazi e caratteri accentati
+    (``... OCPI - Serie Storiche marzo 2026.xlsx``): ``urlopen`` li rifiuta con
+    ``InvalidURL: URL can't contain control characters``. ``urljoin`` risolve
+    href relativi, assoluti e protocol-relative; ``quote`` codifica solo il
+    path, lasciando intatti gli escape già presenti.
+    """
+    parts = urllib.parse.urlsplit(urllib.parse.urljoin(OCPI_PAGE, href))
+    return urllib.parse.urlunsplit(
+        (parts.scheme, parts.netloc, urllib.parse.quote(parts.path, safe="/%"),
+         parts.query, parts.fragment)
+    )
 
 
 def _find_xlsx_url() -> str:
@@ -25,14 +42,7 @@ def _find_xlsx_url() -> str:
     if not links:
         print("[ERRORE] ocpi: nessun link .xlsx trovato")
         sys.exit(1)
-    href = links[0]
-    if href.startswith("//"):
-        return "https:" + href
-    if href.startswith("/"):
-        return "https://osservatoriocpi.unicatt.it" + href
-    if href.startswith("http"):
-        return href
-    return "https://osservatoriocpi.unicatt.it/" + href
+    return _absolute_url(links[0])
 
 
 def main():
