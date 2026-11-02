@@ -2,7 +2,7 @@
 
 import pandas as pd
 import streamlit as st
-from sources import load_scadenze
+from sources import load_scadenze, load_valuta, load_vita_residua
 
 st.title("⏰ Scadenze Debito")
 
@@ -150,3 +150,69 @@ df_display["circolante_mld"] = (df_display["circolante_riv_eur"] / 1e9).round(2)
 df_display = df_display.drop(columns=["circolante_riv_eur"])
 
 st.dataframe(df_display, width='stretch', hide_index=True)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Tutto il debito AP (non solo i titoli del Tesoro)
+# ═══════════════════════════════════════════════════════════════════
+st.divider()
+st.subheader("Tutto il debito AP, non solo i titoli")
+
+vita = load_vita_residua()
+if vita.empty:
+    st.info("Mart della vita residua non disponibile (FPI).")
+else:
+    ultimo_fpi = vita["data"].max()
+    v = vita[vita["data"] == ultimo_fpi]
+    fasce = v[v["codice"].isin(["S13.MGD05", "S13.MGD06", "S13.MGD07"])]
+    media = v[v["codice"] == "S13.MGD10"]["valore"]
+
+    if not fasce.empty:
+        c1, c2, c3, c4 = st.columns(4)
+        for col, codice, etichetta in (
+            (c1, "S13.MGD05", "Entro 1 anno"),
+            (c2, "S13.MGD06", "1-5 anni"),
+            (c3, "S13.MGD07", "Oltre 5 anni"),
+        ):
+            valore = fasce[fasce["codice"] == codice]["valore"].sum()
+            col.metric(etichetta, f"€ {valore/1e3:,.0f} mld")
+        if not media.empty:
+            c4.metric("Vita media", f"{float(media.iloc[0]):.1f} anni")
+
+        try:
+            import plotly.graph_objects as go
+
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=fasce["fascia"],
+                y=fasce["valore"] / 1e3,
+                marker_color="#4c78a8",
+                text=[f"€{v/1e3:,.0f}" for v in fasce["valore"]],
+                textposition="outside",
+            ))
+            fig.update_layout(
+                yaxis_title="mld €",
+                height=320,
+                margin={"t": 20},
+            )
+            st.plotly_chart(fig, width="stretch")
+        except ImportError:
+            st.bar_chart(fasce.set_index("fascia")["valore"] / 1e3)
+
+        st.caption(
+            f"Dati FPI al {ultimo_fpi:%m/%Y}: qui c'è **tutto** il debito delle AP, "
+            "non solo i titoli del Tesoro. La differenza con la sezione sopra è fatta di "
+            "prestiti, depositi e passività degli enti locali."
+        )
+
+valuta = load_valuta()
+if not valuta.empty:
+    ultimo_val = valuta["data"].max()
+    vv = valuta[valuta["data"] == ultimo_val]
+    euro = vv[vv["codice"] == "S13.MGD11"]["valore"].sum()
+    estero = vv[vv["codice"] == "S13.MGD04"]["valore"].sum()
+    if euro:
+        st.caption(
+            f"Valuta al {ultimo_val:%m/%Y}: **{euro/1e3:,.0f} mld in euro** "
+            f"e {estero/1e3:,.1f} mld in valuta estera ({estero/euro*100:.2f}%)."
+        )
