@@ -91,6 +91,31 @@ class TestControparte:
 
 
 @pytest.mark.contract
+class TestClean:
+    def test_duplicati_solo_su_tcce0125(self):
+        """Il clean può avere duplicati residui, ma confinati e contati.
+
+        Il test sul mart verifica l'unicità lì; qui si dichiara l'eccezione del
+        clean: se i casi crescono o escono da TCCE0125, qualcosa è cambiato.
+        """
+        path = ROOT / "out" / "data" / "clean" / "fpi_debito_pa" / "2026" / "fpi_debito_pa_2026_clean.parquet"
+        if not path.exists():
+            pytest.skip(f"clean non presente: {path}")
+        con = duckdb.connect()
+        righe = con.execute(f"""
+            SELECT tavola, count(*) FROM (
+                SELECT tavola, codice, controparte, data
+                FROM read_parquet('{path}')
+                GROUP BY 1,2,3,4 HAVING count(*) > 1
+            ) GROUP BY 1
+        """).fetchall()
+        tavole = {t for t, _ in righe}
+        assert tavole <= {"TCCE0125"}, f"duplicati fuori da TCCE0125: {tavole}"
+        totale = sum(n for _, n in righe)
+        assert totale <= 40, f"{totale} casi di duplicato (attesi ~31): cresciti?"
+
+
+@pytest.mark.contract
 class TestValuta:
     def test_euro_piu_estero_pari_al_totale(self):
         con, valuta = _con("mart_valuta")
