@@ -30,7 +30,7 @@ clean:
     delim: ";"
     encoding: utf-8
     header: true
-  required_columns: [data, tavola, tavola_nome, codice, descrizione, valore_mln_eur, fonte]
+  required_columns: [data, tavola, tavola_nome, codice, controparte, descrizione, valore_mln_eur, fonte]
   validate:
     not_null: [data, tavola, codice]
     min_rows: 50000
@@ -45,6 +45,12 @@ mart:
       sql: "sql/mart_detentori.sql"
     - name: "mart_variazione_mensile"
       sql: "sql/mart_variazione_mensile.sql"
+    - name: "mart_vita_residua"
+      sql: "sql/mart_vita_residua.sql"
+    - name: "mart_valuta"
+      sql: "sql/mart_valuta.sql"
+    - name: "mart_liquidita"
+      sql: "sql/mart_liquidita.sql"
   required_tables: ["mart_debito_ap"]
   validate:
     table_rules:
@@ -57,3 +63,12 @@ mart:
       mart_detentori:
         not_null: [data, codice]
         min_rows: 500
+      mart_vita_residua:
+        not_null: [data, codice, unita]
+        min_rows: 4000
+      mart_valuta:
+        not_null: [data, codice]
+        min_rows: 20000
+      mart_liquidita:
+        not_null: [data, codice, natura]
+        min_rows: 10000

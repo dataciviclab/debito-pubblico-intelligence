@@ -65,6 +65,16 @@ def load_serie_storiche(year: int = 2026):
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
+def load_vita_residua(year: int = 2026):
+    return load_mart("fpi_debito_pa", "mart_vita_residua", year)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_valuta(year: int = 2026):
+    return load_mart("fpi_debito_pa", "mart_valuta", year)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def load_detentori(year: int = 2026):
     return load_mart("fpi_debito_pa", "mart_detentori", year)
 

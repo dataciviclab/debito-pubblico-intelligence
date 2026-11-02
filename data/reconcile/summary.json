@@ -39,8 +39,8 @@
     "periodo": "2026-10–2027-09",
     "tipo": "confronto",
     "n_confrontati": 12,
-    "n_anomalie": 5,
-    "anomalie_dettaglio": "2026-12, 2027-01, 2027-06, 2027-08, 2027-09",
+    "n_anomalie": 0,
+    "anomalie_dettaglio": "",
     "csv": "reconcile_titoli12m_vs_isin.csv"
   },
   {

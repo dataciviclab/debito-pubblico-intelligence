@@ -257,8 +257,12 @@ def run():
         """).fetchall()
         off_map = {m: v for m, v in rows}
 
+        # Il file ufficiale "titoli 12m" ragiona al valore di rimborso: per i
+        # titoli indicizzati e per quelli emessi sotto la pari il rivalutato è
+        # diverso dal nominale (es. IT0005390874: 17.863,7 vs 18.863,7 mln).
+        # Confrontare il nominale produceva +1.000 mln "fantasma" su 4 mesi.
         ours = con.execute("""
-            SELECT strftime(scadenza, '%Y-%m'), round(sum(circolante_nom_eur)/1e6, 0)
+            SELECT strftime(scadenza, '%Y-%m'), round(sum(circolante_riv_eur)/1e6, 0)
             FROM read_parquet('out/data/mart/mef_scadenze_isin/2026/mart_scadenze_isin.parquet')
             WHERE scadenza >= data_ref AND scadenza < date_add(data_ref, INTERVAL 12 MONTH)
               AND classe_strumento = 'Titoli di Stato'
