@@ -1,6 +1,6 @@
 -- clean.sql: FPI Banca d'Italia — Finanza Pubblica Italia
 --
--- raw_input schema: data, tavola, tavola_nome, codice, descrizione, valore_mln_eur, fonte
+-- raw_input schema: data, tavola, tavola_nome, codice, controparte, descrizione, valore_mln_eur, fonte
 -- Delimiter: ;
 --
 -- Il CSV è già in formato long/tidy dal preprocess. Il clean passa tutto
@@ -12,6 +12,7 @@ SELECT
     tavola,
     tavola_nome,
     codice,
+    controparte,
     descrizione,
     cast(valore_mln_eur AS double) AS valore_mln_eur,
     fonte

@@ -11,6 +11,7 @@ SELECT
     tavola,
     tavola_nome,
     codice,
+    controparte,
     descrizione,
     valore_mln_eur
 FROM clean_input

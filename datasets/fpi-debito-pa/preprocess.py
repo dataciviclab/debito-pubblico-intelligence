@@ -84,18 +84,29 @@ def _read_legend(zip_bytes: bytes) -> dict:
     return legend
 
 
-def _decode_code(column: str, table_code: str | None = None) -> str:
+def _decode_code(column: str, table_code: str | None = None) -> tuple[str, str]:
+    """Ritorna (codice, controparte).
+
+    Il nome colonna FPI e' `FPI_FP.{freq}.{geo}.{settore}.{voce}.{controparte}....`
+    La controparte (parts[5]) NON va buttata: per i sotto-settori la stessa voce
+    esiste in piu' versioni (SBI3 = totale, S13BI1 = detro le altre PA, ...) e
+    scartarla produce righe apparentemente duplicate con valori diversi.
+    Per il totale S13 c'e' una sola colonna (SBI3), quindi i numeri aggregati
+    non cambiano.
+    """
     if not column.startswith("FPI_FP."):
-        return ""
+        return "", ""
     parts = column.split(".")
     if len(parts) < 8:
-        return ""
+        return "", ""
+    controparte = parts[5] if len(parts) > 5 else ""
     geo = parts[2]
     if geo != "IT":
-        return f"{geo}.{parts[4]}"
-    if table_code == "TCCE0200" and len(parts) >= 6 and parts[5]:
-        return f"{parts[3]}.{parts[4]}.{parts[5]}"
-    return f"{parts[3]}.{parts[4]}"
+        return f"{geo}.{parts[4]}", controparte
+    if table_code == "TCCE0200" and controparte:
+        # detentori: la controparte e' gia' parte del codice (S13.F3.S121)
+        return f"{parts[3]}.{parts[4]}.{controparte}", controparte
+    return f"{parts[3]}.{parts[4]}", controparte
 
 
 def _wide_to_long(csv_bytes: bytes, table_code: str, legend: dict) -> list[dict]:
@@ -115,13 +126,14 @@ def _wide_to_long(csv_bytes: bytes, table_code: str, legend: dict) -> list[dict]
                 valore = float(value.replace(",", "."))
             except (ValueError, AttributeError):
                 continue
-            codice = _decode_code(colname, table_code)
+            codice, controparte = _decode_code(colname, table_code)
             if not codice:
                 continue
             rows.append({
                 "data": data_oss,
                 "tavola": table_code,
                 "codice": codice,
+                "controparte": controparte,
                 "descrizione": legend.get(codice, ""),
                 "valore_mln_eur": valore,
             })
@@ -164,7 +176,7 @@ def main():
         row["fonte"] = "banca_ditalia_fpi"
 
     fieldnames = [
-        "data", "tavola", "tavola_nome", "codice",
+        "data", "tavola", "tavola_nome", "codice", "controparte",
         "descrizione", "valore_mln_eur", "fonte",
     ]
     with open(output, "w", encoding="utf-8", newline="") as f:
