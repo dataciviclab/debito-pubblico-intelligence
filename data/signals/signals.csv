@@ -1,20 +1,20 @@
 segnale,categoria,descrizione,valore,unita,data_riferimento
-debito_totale_ap_mln_eur,debito,Debito lordo Amministrazioni Pubbliche,3200847.7,mln EUR,2026-08-31
-debito_variazione_mensile_pct,debito,Variazione mensile del debito AP,-0.19,%,2026-08-31
+debito_totale_ap_mln_eur,debito,Debito lordo Amministrazioni Pubbliche,3211587.2,mln EUR,2026-09-30
+debito_variazione_mensile_pct,debito,Variazione mensile del debito AP,0.34,%,2026-09-30
 debito_pil_pct,sostenibilita,Debito/PIL Amministrazioni Pubbliche,136.7,% PIL,2025
 debito_pil_variazione_pp,sostenibilita,Variazione annua del debito/PIL,2.4,pp,2025
 i_g_pp,sostenibilita,Differenza tra interessi impliciti e crescita nominale,0.348,pp,2025
 saldo_primario_pil_pct,sostenibilita,Saldo primario,0.7,% PIL,2025
 spesa_interessi_pil_pct,sostenibilita,Spesa per interessi,3.8,% PIL,2025
 tasso_implicito_pct,sostenibilita,Tasso di interesse implicito sul debito,2.892,%,2025
-rendimento_10y_pct,costo,Rendimento BTP a 10 anni,4.362,%,2026-09
-spread_btp_bund_pp,costo,Spread BTP-Bund a 10 anni,0.889,pp,2026-09
-rollover_12m_pct,rischio,Quota di titoli in scadenza nei prossimi 12 mesi,13.4,%,2026-09-30
-rollover_12m_mld_eur,rischio,Titoli in scadenza nei prossimi 12 mesi,366.1,mld EUR,2026-09-30
+rendimento_10y_pct,costo,Rendimento BTP a 10 anni,4.68,%,2026-10
+spread_btp_bund_pp,costo,Spread BTP-Bund a 10 anni,1.264,pp,2026-10
+rollover_12m_pct,rischio,Quota di titoli in scadenza nei prossimi 12 mesi,14.0,%,2026-10-31
+rollover_12m_mld_eur,rischio,Titoli in scadenza nei prossimi 12 mesi,380.4,mld EUR,2026-10-31
 vita_media_anni,rischio,Vita media residua dei titoli di Stato,6.96,anni,2026-09
-quota_banca_italia_pct,detentori,Quota del debito AP detenuta dalla Banca d'Italia,16.568,%,2026-07-31
-quota_non_residenti_pct,detentori,Quota del debito AP detenuta da non residenti,36.511,%,2026-07-31
-titoli_in_circolazione_mld_eur,debito,Titoli di Stato in circolazione,2705.6,mld EUR,2026-09-30
-cedola_media_ponderata_pct,costo,Cedola media ponderata sullo stock (solo titoli con cedola fissa),2.85,%,2026-09-30
-interessi_annui_titoli_mld_eur,costo,"Interessi annui sui titoli di Stato in circolazione (stima: BOT a tasso 12m, CCTeu Euribor 6m + spread)",82.3,mld EUR,2026-09-30
-costo_rifinanziamento_12m_mld_eur,costo,Costo annuo aggiuntivo di rifinanziare i titoli in scadenza nei prossimi 12 mesi ai tassi correnti,9.4,mld EUR,2026-09-30
+quota_banca_italia_pct,detentori,Quota del debito AP detenuta dalla Banca d'Italia,16.427,%,2026-08-31
+quota_non_residenti_pct,detentori,Quota del debito AP detenuta da non residenti,36.33,%,2026-08-31
+titoli_in_circolazione_mld_eur,debito,Titoli di Stato in circolazione,2741.2,mld EUR,2026-10-31
+cedola_media_ponderata_pct,costo,Cedola media ponderata sullo stock (solo titoli con cedola fissa),2.9,%,2026-10-31
+interessi_annui_titoli_mld_eur,costo,"Interessi annui sui titoli di Stato in circolazione (stima: BOT a tasso 12m, CCTeu Euribor 6m + spread)",83.7,mld EUR,2026-10-31
+costo_rifinanziamento_12m_mld_eur,costo,Costo annuo aggiuntivo di rifinanziare i titoli in scadenza nei prossimi 12 mesi ai tassi correnti,10.3,mld EUR,2026-10-31
